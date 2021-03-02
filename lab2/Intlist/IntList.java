@@ -82,7 +82,34 @@ public class IntList {
 
     public static IntList dcatenate(IntList A, IntList B) {
         //TODO:  fill in method
-        return null;
+        // iterative version
+        if (A == null) {
+            return B;
+        }
+        IntList p = A;
+        while (p.rest != null) {
+            p = p.rest;
+        }
+        p.rest = B;
+        return A;
+
+//        // recursive version
+//        if (A == null) {
+//            return B;
+//        }
+//        IntList last = dhelp(A);
+//        last.rest = B;
+//        return A;
+    }
+
+    /**
+     * helper function of recursive dcatenate
+     */
+    private static IntList dhelp(IntList A) {
+        if (A.rest == null) {
+            return A;
+        }
+        return dhelp(A.rest);
     }
 
     /**
@@ -91,10 +118,45 @@ public class IntList {
      */
     public static IntList catenate(IntList A, IntList B) {
         //TODO:  fill in method
-        return null;
+//        // iterative version
+//        if (A == null && B == null) {
+//            return null;
+//        }
+//
+//        IntList res, p;
+//
+//        if (A == null) {
+//            res = new IntList(B.first, null);
+//            B = B.rest;
+//        } else {
+//            res = new IntList(A.first, null);
+//            A = A.rest;
+//        }
+//
+//        p = res;
+//
+//        while (A != null) {
+//            p.rest = new IntList(A.first, null);
+//            p = p.rest;
+//            A = A.rest;
+//        }
+//        while (B != null) {
+//            p.rest = new IntList(B.first, null);
+//            p = p.rest;
+//            B = B.rest;
+//        }
+//
+//        return res;
+
+        // recursive version
+        if (A == null && B == null) {
+            return null;
+        }
+        if (A == null) {
+            return new IntList(B.first, catenate(A, B.rest));
+        }
+        return new IntList(A.first, catenate(A.rest, B));
     }
-
-
 
 
 
