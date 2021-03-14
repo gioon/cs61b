@@ -25,14 +25,12 @@ public class ArrayDeque<T> {
         int aLast = capacity / 2;
         int aFirst = aLast - 1;
 
-        int i = 0;
-        while (i < size) {
+        for (int i = 0; i < size; i++) {
             a[aLast] = get(i);
             aLast++;
             if (aLast == capacity) {
                 aLast = 0;
             }
-            i++;
         }
 
         items = a;
