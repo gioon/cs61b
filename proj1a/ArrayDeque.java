@@ -12,43 +12,43 @@ public class ArrayDeque<T> {
         size = 0;
     }
 
-    public ArrayDeque(T item) {
-        items = (T[]) new Object[8];
-        items[4] = item;
-        nextFirst = 3;
-        nextLast = 5;
-        size = 1;
-    }
+//    public ArrayDeque(T item) {
+//        items = (T[]) new Object[8];
+//        items[4] = item;
+//        nextFirst = 3;
+//        nextLast = 5;
+//        size = 1;
+//    }
 
-    private void resize(int capacity) {
-        T[] a = (T[]) new Object[capacity];
-        int aNextFirst = capacity / 2;
-        int aNextLast = aNextFirst + 1;
-
-//        for (int i = 0; i < size; i++) {
+//    private void resize(int capacity) {
+//        T[] a = (T[]) new Object[capacity];
+//        int aNextFirst = capacity / 2;
+//        int aNextLast = aNextFirst + 1;
+//
+////        for (int i = 0; i < size; i++) {
+////            a[aNextLast] = get(i);
+////            aNextLast++;
+////        }
+//
+//        int i = 0;
+//        while (i < size / 2) {
+//            a[aNextFirst] = get(i);
+//            aNextFirst--;
+//            i++;
+//        }
+//        while (i < size) {
 //            a[aNextLast] = get(i);
 //            aNextLast++;
+//            i++;
 //        }
-
-        int i = 0;
-        while (i < size / 2) {
-            a[aNextFirst] = get(i);
-            aNextFirst--;
-            i++;
-        }
-        while (i < size) {
-            a[aNextLast] = get(i);
-            aNextLast++;
-            i++;
-        }
-
-        items = a;
-    }
+//
+//        items = a;
+//    }
 
     public void addFirst(T item) {
-        if (size == items.length) {
-            resize(size * RFACTOR);
-        }
+//        if (size == items.length) {
+//            resize(size * RFACTOR);
+//        }
         items[nextFirst] = item;
         if (nextFirst == 0) {
             nextFirst = items.length - 1;
@@ -58,9 +58,9 @@ public class ArrayDeque<T> {
     }
 
     public void addLast(T item) {
-        if (size == items.length) {
-            resize(size * RFACTOR);
-        }
+//        if (size == items.length) {
+//            resize(size * RFACTOR);
+//        }
         items[nextLast] = item;
         if (nextLast == items.length - 1) {
             nextLast = 0;
@@ -98,12 +98,12 @@ public class ArrayDeque<T> {
         } else {
             nextFirst++;
         }
-        T item = items[nextLast];
+        T item = items[nextFirst];
         items[nextFirst] = null;
 
-        if (size / items.length < 0.25) {
-            resize(items.length / 2);
-        }
+//        if (size / items.length < 0.25 && items.length > 16) {
+//            resize(items.length / 2);
+//        }
         return item;
     }
 
@@ -116,9 +116,9 @@ public class ArrayDeque<T> {
         T item = items[nextLast];
         items[nextLast] = null;
 
-        if (size / items.length < 0.25) {
-            resize(items.length / 2);
-        }
+//        if (size / items.length < 0.25 && items.length > 16) {
+//            resize(items.length / 2);
+//        }
         return item;
     }
 

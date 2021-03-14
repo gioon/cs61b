@@ -84,9 +84,27 @@ public class LinkedListDequeTest {
 
 	}
 
+	public static void getReverseTest() {
+
+		System.out.println("Running getReverse test.");
+
+		LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
+
+		lld1.addLast(0);
+		lld1.addLast(1);
+		if (lld1.getRecursive(0).equals(0) && lld1.getRecursive(1).equals(1)) {
+			printTestStatus(true);
+		} else {
+			printTestStatus(false);
+		}
+
+	}
+
 	public static void main(String[] args) {
 		System.out.println("Running tests.\n");
 		addIsEmptySizeTest();
 		addRemoveTest();
+
+		getReverseTest();
 	}
 } 
