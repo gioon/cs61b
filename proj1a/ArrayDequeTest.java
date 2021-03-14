@@ -74,4 +74,44 @@ public class ArrayDequeTest {
         assertEquals(0, a.size());
         assertEquals(true, a.isEmpty());
     }
+
+    @Test
+    public void testPrintDeque() {
+        ArrayDeque<Integer> a = new ArrayDeque<>();
+        a.addFirst(2);
+        a.addLast(3);
+        a.addFirst(1);
+        a.addFirst(0);
+        // "0 1 2 3 "
+        a.printDeque();
+    }
+
+    @Test
+    public void testResize() {
+        ArrayDeque<Integer> a = new ArrayDeque<>();
+        for (int i = 0; i < 20; i++) {
+            a.addLast(i);
+        }
+        a.printDeque();
+        System.out.println();
+
+        for (int i = 0; i < 6; i++) {
+            a.removeLast();
+        }
+        a.printDeque();
+        System.out.println();
+
+        ArrayDeque<Integer> b = new ArrayDeque<>();
+        for (int i = 0; i < 20; i++) {
+            b.addFirst(i);
+        }
+        b.printDeque();
+        System.out.println();
+
+        for (int i = 0; i < 12; i++) {
+            b.removeFirst();
+        }
+        b.printDeque();
+        System.out.println();
+    }
 }

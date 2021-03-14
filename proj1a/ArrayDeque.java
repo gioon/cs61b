@@ -7,48 +7,43 @@ public class ArrayDeque<T> {
 
     public ArrayDeque() {
         items = (T[]) new Object[8];
-        nextFirst = 4;
-        nextLast = 5;
+        nextFirst = 3;
+        nextLast = 4;
         size = 0;
     }
 
 //    public ArrayDeque(T item) {
 //        items = (T[]) new Object[8];
-//        items[4] = item;
-//        nextFirst = 3;
-//        nextLast = 5;
+//        items[3] = item;
+//        nextFirst = 2;
+//        nextLast = 4;
 //        size = 1;
 //    }
 
-//    private void resize(int capacity) {
-//        T[] a = (T[]) new Object[capacity];
-//        int aNextFirst = capacity / 2;
-//        int aNextLast = aNextFirst + 1;
-//
-////        for (int i = 0; i < size; i++) {
-////            a[aNextLast] = get(i);
-////            aNextLast++;
-////        }
-//
-//        int i = 0;
-//        while (i < size / 2) {
-//            a[aNextFirst] = get(i);
-//            aNextFirst--;
-//            i++;
-//        }
-//        while (i < size) {
-//            a[aNextLast] = get(i);
-//            aNextLast++;
-//            i++;
-//        }
-//
-//        items = a;
-//    }
+    private void resize(int capacity) {
+        T[] a = (T[]) new Object[capacity];
+        int aLast = capacity / 2;
+        int aFirst = aLast - 1;
+
+        int i = 0;
+        while (i < size) {
+            a[aLast] = get(i);
+            aLast++;
+            if (aLast == capacity) {
+                aLast = 0;
+            }
+            i++;
+        }
+
+        items = a;
+        nextFirst = aFirst;
+        nextLast = aLast;
+    }
 
     public void addFirst(T item) {
-//        if (size == items.length) {
-//            resize(size * RFACTOR);
-//        }
+        if (size == items.length) {
+            resize(size * RFACTOR);
+        }
         items[nextFirst] = item;
         if (nextFirst == 0) {
             nextFirst = items.length - 1;
@@ -59,9 +54,9 @@ public class ArrayDeque<T> {
     }
 
     public void addLast(T item) {
-//        if (size == items.length) {
-//            resize(size * RFACTOR);
-//        }
+        if (size == items.length) {
+            resize(size * RFACTOR);
+        }
         items[nextLast] = item;
         if (nextLast == items.length - 1) {
             nextLast = 0;
@@ -80,21 +75,21 @@ public class ArrayDeque<T> {
     }
 
     public void printDeque() {
-        if (nextFirst > nextLast) {
-            for (int i = nextFirst + 1; i < items.length; i++) {
-                System.out.print(items[i] + " ");
+        int i = nextFirst + 1;
+
+        for (int cnt = 0; cnt < size; cnt++) {
+            if (i >= items.length) {
+                i -= items.length;
             }
-            for (int i = 0; i < nextLast; i++) {
-                System.out.print(items[i] + " ");
-            }
-        } else {
-            for (int i = nextFirst + 1; i < nextLast; i++) {
-                System.out.print(items[i] + " ");
-            }
+            System.out.print(items[i] + " ");
+            i++;
         }
     }
 
     public T removeFirst() {
+        if (size == 0) {
+            return null;
+        }
         if (nextFirst == items.length - 1) {
             nextFirst = 0;
         } else {
@@ -104,13 +99,16 @@ public class ArrayDeque<T> {
         items[nextFirst] = null;
 
         size--;
-//        if (size / items.length < 0.25 && items.length > 16) {
-//            resize(items.length / 2);
-//        }
+        if ((double) size / items.length < 0.25 && items.length > 16) {
+            resize(items.length / 2);
+        }
         return item;
     }
 
     public T removeLast() {
+        if (size == 0) {
+            return null;
+        }
         if (nextLast == 0) {
             nextLast = items.length - 1;
         } else {
@@ -120,9 +118,9 @@ public class ArrayDeque<T> {
         items[nextLast] = null;
 
         size--;
-//        if (size / items.length < 0.25 && items.length > 16) {
-//            resize(items.length / 2);
-//        }
+        if ((double) size / items.length < 0.25 && items.length > 16) {
+            resize(items.length / 2);
+        }
         return item;
     }
 
