@@ -55,6 +55,7 @@ public class ArrayDeque<T> {
         } else {
             nextFirst--;
         }
+        size++;
     }
 
     public void addLast(T item) {
@@ -67,6 +68,7 @@ public class ArrayDeque<T> {
         } else {
             nextLast++;
         }
+        size++;
     }
 
     public boolean isEmpty() {
@@ -101,6 +103,7 @@ public class ArrayDeque<T> {
         T item = items[nextFirst];
         items[nextFirst] = null;
 
+        size--;
 //        if (size / items.length < 0.25 && items.length > 16) {
 //            resize(items.length / 2);
 //        }
@@ -116,6 +119,7 @@ public class ArrayDeque<T> {
         T item = items[nextLast];
         items[nextLast] = null;
 
+        size--;
 //        if (size / items.length < 0.25 && items.length > 16) {
 //            resize(items.length / 2);
 //        }
