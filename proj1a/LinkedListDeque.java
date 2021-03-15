@@ -4,7 +4,7 @@ public class LinkedListDeque<T> {
     private class Node {
         private T item;
         private Node prev, next;
-        Node(Node p, T i, Node n) {
+        private Node(Node p, T i, Node n) {
             prev = p;
             item = i;
             next = n;
@@ -69,6 +69,17 @@ public class LinkedListDeque<T> {
         return old.item;
     }
 
+//    public T removeFirst() {
+//        if (size == 0) {
+//            return null;
+//        }
+//        Node old = sentinel.next;
+//        sentinel.next = old.next;
+//        old.next.prev = sentinel;
+//        size--;
+//        return old.item;
+//    }
+
     public T removeLast() {
         Node old = sentinel.prev;
         if (old == sentinel) {
@@ -79,6 +90,17 @@ public class LinkedListDeque<T> {
         size--;
         return old.item;
     }
+
+//    public T removeLast() {
+//        if (size == 0) {
+//            return null;
+//        }
+//        Node old = sentinel.prev;
+//        sentinel.prev = old.prev;
+//        old.prev.next = sentinel;
+//        size--;
+//        return old.item;
+//    }
 
     public T get(int index) {
         Node p = sentinel;
@@ -91,6 +113,19 @@ public class LinkedListDeque<T> {
         }
         return null;
     }
+
+//    public T get(int index) {
+//        if (index < 0 || index > size - 1) {
+//            return null;
+//        }
+//
+//        Node p = sentinel;
+//        while (index >= 0) {
+//            p = p.next;
+//            index -= 1;
+//        }
+//        return p.item;
+//    }
 
     private T getHelper(Node p, int index) {
         if (p == sentinel) {
@@ -105,6 +140,20 @@ public class LinkedListDeque<T> {
     public T getRecursive(int index) {
         return getHelper(sentinel.next, index);
     }
+
+//    private T getRecursiveHelper(Node p, int index) {
+//        if (index == 0) {
+//            return p.item;
+//        }
+//        return getRecursiveHelper(p.next, index - 1);
+//    }
+//
+//    public T getRecursive(int index) {
+//        if (index < 0 || index > size - 1) {
+//            return null;
+//        }
+//        return getRecursiveHelper(sentinel.next, index);
+//    }
 }
 
 /** two sentinel topology */
@@ -113,7 +162,7 @@ public class LinkedListDeque<T> {
 //    private class Node {
 //        private T item;
 //        private Node prev, next;
-//        Node(Node p, T i, Node n) {
+//        private Node(Node p, T i, Node n) {
 //            prev = p;
 //            item = i;
 //            next = n;
