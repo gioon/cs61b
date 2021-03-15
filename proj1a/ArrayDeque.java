@@ -99,7 +99,7 @@ public class ArrayDeque<T> {
         size--;
 //        if ((double) size / items.length < 0.25 && items.length > 16) {
         if (size * 4 < items.length && items.length > 16) {
-                resize(items.length / 2);
+            resize(items.length / 2);
         }
         return item;
     }
