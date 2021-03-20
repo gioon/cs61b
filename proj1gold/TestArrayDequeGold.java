@@ -22,6 +22,7 @@ public class TestArrayDequeGold {
             assertEquals(message, ads.removeLast(), sad.removeLast());
             sad.addLast(c);
             ads.addLast(c);
+            message = message + "addLast(" + c + ")\n";
         }
     }
 }
