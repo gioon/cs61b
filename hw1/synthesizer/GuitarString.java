@@ -52,18 +52,18 @@ public class GuitarString {
         return buffer.peek();
     }
 
-    @Override
-    public String toString() {
-        StringBuilder returnSB = new StringBuilder("{");
-        BoundedQueue<Double> temp = new ArrayRingBuffer<>(buffer.capacity());
-        while (!buffer.isEmpty()) {
-            double sample = buffer.dequeue();
-            temp.enqueue(sample);
-            returnSB.append(sample);
-            returnSB.append(" ");
-        }
-        returnSB.append("}");
-        buffer = temp;
-        return returnSB.toString();
-    }
+//    @Override
+//    public String toString() {
+//        StringBuilder returnSB = new StringBuilder("{");
+//        BoundedQueue<Double> temp = new ArrayRingBuffer<>(buffer.capacity());
+//        while (!buffer.isEmpty()) {
+//            double sample = buffer.dequeue();
+//            temp.enqueue(sample);
+//            returnSB.append(sample);
+//            returnSB.append(" ");
+//        }
+//        returnSB.append("}");
+//        buffer = temp;
+//        return returnSB.toString();
+//    }
 }

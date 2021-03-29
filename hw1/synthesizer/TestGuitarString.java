@@ -31,7 +31,7 @@ public class TestGuitarString {
         GuitarString s = new GuitarString(11025);
         s.pluck();
 
-        System.out.println(s);
+//        System.out.println(s);
 
         // Record the front four values, ticcing as we go.
         double s1 = s.sample();
@@ -45,7 +45,7 @@ public class TestGuitarString {
         // If we tic once more, it should be equal to 0.996*0.5*(s1 + s2)
         s.tic();
 
-        System.out.println(s);
+//        System.out.println(s);
 
         double s5 = s.sample();
         double expected = 0.996 * 0.5 * (s1 + s2);
