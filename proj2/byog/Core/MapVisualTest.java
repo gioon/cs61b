@@ -27,12 +27,13 @@ public class MapVisualTest {
     @Test
     public void testMapGeneratorLoop() {
         for (int seed = 0; seed < 1000; seed++) {
-            MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, seed, NOTHING, FLOOR, WALL, LOCKED_DOOR);
+            MapGenerator mg = new MapGenerator(
+                    WIDTH, HEIGHT, seed, NOTHING, FLOOR, WALL, LOCKED_DOOR);
             try {
-                System.out.println("seed "+seed);
+                System.out.println("seed " + seed);
                 TETile[][] world = mg.generate();
 
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 System.out.println(seed);
             }
         }

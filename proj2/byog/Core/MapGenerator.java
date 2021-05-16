@@ -32,7 +32,9 @@ public class MapGenerator {
      * 如此循环，最后在连接后的room和hallway边界上依次铺上wall（如果wall覆盖到room则不覆盖）
      *
      * 方案1：
-     * 铺设一条总的hallway，有多条分支hallway，在hallway上用nextPoint选取节点，铺一个room后，用nextPoint选取下一个，再铺
+     * 铺设一条总的hallway，有多条分支hallway
+     * 在hallway上用nextPoint选取节点
+     * 铺一个room后，用nextPoint选取下一个，再铺
      *
      * 方案2：
      * 随机生成一个点，铺一个room，再随机生成另一个点，用hallway连接，铺另一个room
@@ -104,7 +106,8 @@ public class MapGenerator {
      * generate方法：
      * （base是rectangle或hallway的start）
      * （1）生成1个rectangle base（确保不要outOfBound）
-     * （2）根据（1）的rectangle base生成rectangle（除第1个，都要判断overlap，如果overlap，停止）（确保不要outOfBound）
+     * （2）根据（1）的rectangle base生成rectangle
+     * （除第1个，都要判断overlap，如果overlap，停止）（确保不要outOfBound）
      * （3）根据（2）的rectangle，在其周围生成N个hallway base（确保不要outOfBound）
      * （4）根据（3）的每个hallway base生成hallway（判断overlap，如果overlap，停止）（确保不要outOfBound）
      * （5）根据（4）的每个hallway，在其周围生成1个rectangle base（确保不要outOfBound），重复（2）-（5）
@@ -119,11 +122,18 @@ public class MapGenerator {
      *
      * 方案9（方案8的基础上提出）：
      * generate方法：
-     * 1个rectangle可生成N个hallway，1个hallway只可生成1个rectangle
+     * 1个rectangle可生成N个hallway
+     * 1个hallway只可生成1个rectangle
      * （1）生成1个rectangle（生成时确保不要outOfBound）
-     * （2）根据（1）的rectangle生成1-4个hallway（生成时确保不要outOfBound，如果无法实现，停止）（生成后判断overlap，如果overlap，尝试attempt次后停止）
-     * （3）根据（2）的每个hallway生成1个rectangle（生成时确保不要outOfBound，如果无法实现，停止）（生成后判断overlap，如果overlap，尝试attempt次后停止）
-     * （4）根据（3）的每个rectangle生成1-4个hallway（生成时确保不要outOfBound，如果无法实现，停止）（生成后判断overlap，如果overlap，尝试attempt次后停止）
+     * （2）根据（1）的rectangle生成1-4个hallway
+     * （生成时确保不要outOfBound，如果无法实现，停止）
+     * （生成后判断overlap，如果overlap，尝试attempt次后停止）
+     * （3）根据（2）的每个hallway生成1个rectangle
+     * （生成时确保不要outOfBound，如果无法实现，停止）
+     * （生成后判断overlap，如果overlap，尝试attempt次后停止）
+     * （4）根据（3）的每个rectangle生成1-4个hallway
+     * （生成时确保不要outOfBound，如果无法实现，停止）
+     * （生成后判断overlap，如果overlap，尝试attempt次后停止）
      *  重复（3）-（4）
      * （5）当全部停止时，调用drawBackground drawFloor drawWall对TETile[][] world进行操作
      * （6）随机选取其中1个wall作为door
@@ -138,42 +148,47 @@ public class MapGenerator {
 
     /**
      * Create a Room class and keep a list of all existing rooms during world generation.
-     * Write an overlap method for the Room class, and reject any generated room that overlaps an existing one.
+     * Write an overlap method for the Room class,
+     * and reject any generated room that overlaps an existing one.
      * If you need to return multiple things, make a class that has multiple fields.
      *
-     * In my case, I wrote a MapGenerator class, and created a MapVisualTest class that called methods
+     * In my case, I wrote a MapGenerator class,
+     * and created a MapVisualTest class that called methods
      * in MapGenerator directly. This avoided need to collect a seed from the user.
      * Afterwards, I wrote playWithInputString to collect the seed from the input string
      * (e.g. “N1234S” gives seed 1234) and pass it to MapGenerator.
      * Our autograder for phase 1 will use playWithInputString only.
      *
-     * Emergent approach: For each room, randomly generate neighbor rooms that branch off of the current room.
-     * Since a hallway is just a width 1 room, this algorithm is capable of generating turning hallways.
+     * Emergent approach: For each room,
+     * randomly generate neighbor rooms that branch off of the current room.
+     * Since a hallway is just a width 1 room,
+     * this algorithm is capable of generating turning hallways.
      *
      */
 
     private int width, height, roomWidth, roomHeight;
     private TETile[][] world;
 
-    private TETile nothing, floor, wall, locked_door;
+    private TETile nothing, floor, wall, lockedDoor;
 
     private ArrayList<Room> rooms;
     private Random random;
 
     private int ATTEMPT;
 
-    public MapGenerator(int width, int height, long seed, TETile nothing, TETile floor, TETile wall, TETile locked_door) {
+    public MapGenerator(int width, int height, long seed,
+                        TETile nothing, TETile floor, TETile wall, TETile lockedDoor) {
         this.width = width;
         this.height = height;
         this.world = new TETile[width][height];
 
-        this.roomWidth = Math.min(width-2, width / 10);
-        this.roomHeight = Math.min(height-2, height / 5);
+        this.roomWidth = Math.min(width - 2, width / 10);
+        this.roomHeight = Math.min(height - 2, height / 5);
 
         this.nothing = nothing;
         this.floor = floor;
         this.wall = wall;
-        this.locked_door = locked_door;
+        this.lockedDoor = lockedDoor;
 
         this.rooms = new ArrayList<Room>();
         this.random = new Random(seed);
@@ -186,8 +201,10 @@ public class MapGenerator {
             if (room.equals(except)) {
                 continue;
             }
-            if (target.maxX < room.minX - 2 || target.minX > room.maxX + 2 ||
-                    target.maxY < room.minY - 2 || target.minY > room.maxY + 2) {
+            if (target.maxX < room.minX - 2
+                    || target.minX > room.maxX + 2
+                    || target.maxY < room.minY - 2
+                    || target.minY > room.maxY + 2) {
                 continue;
             }
 //            System.out.print(target);
@@ -198,12 +215,12 @@ public class MapGenerator {
         return false;
     }
 
-    public boolean outOfBound(Position p) {
-        if (p.x <= 0 || p.x >= width - 1 || p.y <= 0 || p.y >= height - 1) {
-            return true;
-        }
-        return false;
-    }
+//    public boolean outOfBound(Position p) {
+//        if (p.x <= 0 || p.x >= width - 1 || p.y <= 0 || p.y >= height - 1) {
+//            return true;
+//        }
+//        return false;
+//    }
 
 //    public Rectangle generateFirst() {
 //        Position firstBase = new Position(random.nextInt(width-2)+1, random.nextInt(height-2)+1);
@@ -214,12 +231,14 @@ public class MapGenerator {
 //    }
 
     public Rectangle generateFirst() {
-        Position firstBase = new Position(random.nextInt(width-2)+1, random.nextInt(height-2)+1);
+        Position firstBase = new Position(
+                random.nextInt(width - 2) + 1,
+                random.nextInt(height - 2) + 1);
         Position firstEnd = new Position(
-                Math.min(firstBase.x+random.nextInt(roomWidth),
-                firstBase.x+random.nextInt(width-1-firstBase.x)),
-                Math.min(firstBase.y+random.nextInt(roomHeight),
-                firstBase.y+random.nextInt(height-1-firstBase.y)));
+                Math.min(firstBase.x + random.nextInt(roomWidth),
+                        firstBase.x + random.nextInt(width - 1 - firstBase.x)),
+                Math.min(firstBase.y + random.nextInt(roomHeight),
+                        firstBase.y + random.nextInt(height - 1 - firstBase.y)));
 
         Rectangle firstRec = new Rectangle(firstBase, firstEnd);
         rooms.add(firstRec);
@@ -297,9 +316,12 @@ public class MapGenerator {
 
             // up
             if (rec.maxY <= height - 3) {
-                base = new Position(rec.minX+random.nextInt(rec.maxX-rec.minX+1), rec.maxY+1);
+                base = new Position(
+                        rec.minX + random.nextInt(rec.maxX - rec.minX + 1),
+                        rec.maxY + 1);
                 end = new Position(base.x,
-                        Math.min(base.y+random.nextInt(roomHeight), base.y+random.nextInt(height-1-base.y)));
+                        Math.min(base.y + random.nextInt(roomHeight),
+                                base.y + random.nextInt(height - 1 - base.y)));
                 hall = new Hallway(base, end, 0);
                 if (!overlap(hall, rec)) {
                     halls.add(hall);
@@ -309,9 +331,12 @@ public class MapGenerator {
 
             // down
             if (rec.minY >= 2) {
-                base = new Position(rec.minX+random.nextInt(rec.maxX-rec.minX+1), rec.minY-1);
+                base = new Position(
+                        rec.minX + random.nextInt(rec.maxX - rec.minX + 1),
+                        rec.minY - 1);
                 end = new Position(base.x,
-                        Math.max(base.y-random.nextInt(roomHeight), base.y-random.nextInt(base.y)));
+                        Math.max(base.y - random.nextInt(roomHeight),
+                                base.y - random.nextInt(base.y)));
                 hall = new Hallway(base, end, 1);
                 if (!overlap(hall, rec)) {
                     halls.add(hall);
@@ -321,9 +346,10 @@ public class MapGenerator {
 
             // left
             if (rec.minX >= 2) {
-                base = new Position(rec.minX-1, rec.minY+random.nextInt(rec.maxY-rec.minY+1));
-                end = new Position(Math.max(base.x-random.nextInt(roomWidth),
-                        base.x-random.nextInt(base.x)), base.y);
+                base = new Position(rec.minX - 1,
+                        rec.minY + random.nextInt(rec.maxY - rec.minY + 1));
+                end = new Position(Math.max(base.x - random.nextInt(roomWidth),
+                        base.x - random.nextInt(base.x)), base.y);
                 hall = new Hallway(base, end, 2);
                 if (!overlap(hall, rec)) {
                     halls.add(hall);
@@ -333,9 +359,10 @@ public class MapGenerator {
 
             // right
             if (rec.maxX <= width - 3) {
-                base = new Position(rec.maxX+1, rec.minY+random.nextInt(rec.maxY-rec.minY+1));
-                end = new Position(Math.min(base.x+random.nextInt(roomWidth),
-                        base.x+random.nextInt(width-1-base.x)), base.y);
+                base = new Position(rec.maxX + 1,
+                        rec.minY + random.nextInt(rec.maxY - rec.minY + 1));
+                end = new Position(Math.min(base.x + random.nextInt(roomWidth),
+                        base.x + random.nextInt(width - 1 - base.x)), base.y);
                 hall = new Hallway(base, end, 3);
                 if (!overlap(hall, rec)) {
                     halls.add(hall);
@@ -405,43 +432,48 @@ public class MapGenerator {
                     if (hall.end.y >= height - 2) {
                         continue;
                     }
-                    base = new Position(Math.max(hall.end.x-random.nextInt(roomWidth),
-                            hall.end.x-random.nextInt(hall.end.x)), hall.end.y+1);
-                    end = new Position(Math.min(hall.end.x+random.nextInt(roomWidth),
-                            hall.end.x+random.nextInt(width-1-hall.end.x)),
-                            Math.min(base.y+random.nextInt(roomHeight), base.y+random.nextInt(height-1-base.y)));
+                    base = new Position(Math.max(hall.end.x - random.nextInt(roomWidth),
+                            hall.end.x - random.nextInt(hall.end.x)), hall.end.y + 1);
+                    end = new Position(Math.min(hall.end.x + random.nextInt(roomWidth),
+                            hall.end.x + random.nextInt(width - 1 - hall.end.x)),
+                            Math.min(base.y + random.nextInt(roomHeight),
+                                    base.y + random.nextInt(height - 1 - base.y)));
                     break;
                 case 1: // down
                     if (hall.end.y <= 1) {
                         continue;
                     }
-                    base = new Position(Math.max(hall.end.x-random.nextInt(roomWidth),
-                            hall.end.x-random.nextInt(hall.end.x)), hall.end.y-1);
-                    end = new Position(Math.min(hall.end.x+random.nextInt(roomWidth),
-                            hall.end.x+random.nextInt(width-1-hall.end.x)),
-                            Math.max(base.y-random.nextInt(roomHeight), base.y-random.nextInt(base.y)));
+                    base = new Position(Math.max(hall.end.x - random.nextInt(roomWidth),
+                            hall.end.x - random.nextInt(hall.end.x)), hall.end.y - 1);
+                    end = new Position(Math.min(hall.end.x + random.nextInt(roomWidth),
+                            hall.end.x + random.nextInt(width - 1 - hall.end.x)),
+                            Math.max(base.y - random.nextInt(roomHeight),
+                                    base.y - random.nextInt(base.y)));
                     break;
                 case 2: // left
                     if (hall.end.x <= 1) {
                         continue;
                     }
-                    base = new Position(hall.end.x-1,
-                            Math.max(hall.end.y-random.nextInt(roomHeight), hall.end.y-random.nextInt(hall.end.y)));
-                    end = new Position(Math.max(base.x-random.nextInt(roomWidth), base.x-random.nextInt(base.x)),
-                            Math.min(hall.end.y+random.nextInt(roomHeight),
-                            hall.end.y+random.nextInt(height-1-hall.end.y)));
+                    base = new Position(hall.end.x - 1,
+                            Math.max(hall.end.y - random.nextInt(roomHeight),
+                                    hall.end.y - random.nextInt(hall.end.y)));
+                    end = new Position(Math.max(base.x - random.nextInt(roomWidth),
+                            base.x - random.nextInt(base.x)),
+                            Math.min(hall.end.y + random.nextInt(roomHeight),
+                                    hall.end.y + random.nextInt(height - 1 - hall.end.y)));
                     break;
                 case 3: // right
                 default:
                     if (hall.end.x >= width - 2) {
                         continue;
                     }
-                    base = new Position(hall.end.x+1,
-                            Math.max(hall.end.y-random.nextInt(roomHeight), hall.end.y-random.nextInt(hall.end.y)));
-                    end = new Position(Math.min(base.x+random.nextInt(roomWidth),
-                            base.x+random.nextInt(width-1-base.x)),
-                            Math.min(hall.end.y+random.nextInt(roomHeight),
-                            hall.end.y+random.nextInt(height-1-hall.end.y)));
+                    base = new Position(hall.end.x + 1,
+                            Math.max(hall.end.y - random.nextInt(roomHeight),
+                                    hall.end.y - random.nextInt(hall.end.y)));
+                    end = new Position(Math.min(base.x + random.nextInt(roomWidth),
+                            base.x + random.nextInt(width - 1 - base.x)),
+                            Math.min(hall.end.y + random.nextInt(roomHeight),
+                                    hall.end.y + random.nextInt(height - 1 - hall.end.y)));
             }
 
             rec = new Rectangle(base, end);
@@ -487,22 +519,22 @@ public class MapGenerator {
 
     public void drawWall() {
         for (Room room: rooms) {
-            for (int x = room.minX-1, y = room.minY-1; x <= room.maxX+1; x++) {
+            for (int x = room.minX - 1, y = room.minY - 1; x <= room.maxX + 1; x++) {
                 if (!world[x][y].equals(floor)) {
                     world[x][y] = wall;
                 }
             }
-            for (int x = room.minX-1, y = room.maxY+1; x <= room.maxX+1; x++) {
+            for (int x = room.minX - 1, y = room.maxY + 1; x <= room.maxX + 1; x++) {
                 if (!world[x][y].equals(floor)) {
                     world[x][y] = wall;
                 }
             }
-            for (int x = room.minX-1, y = room.minY; y <= room.maxY; y++) {
+            for (int x = room.minX - 1, y = room.minY; y <= room.maxY; y++) {
                 if (!world[x][y].equals(floor)) {
                     world[x][y] = wall;
                 }
             }
-            for (int x = room.maxX+1, y = room.minY; y <= room.maxY; y++) {
+            for (int x = room.maxX + 1, y = room.minY; y <= room.maxY; y++) {
                 if (!world[x][y].equals(floor)) {
                     world[x][y] = wall;
                 }
@@ -512,31 +544,30 @@ public class MapGenerator {
 
     public void drawDoor() {
         while (true) {
-            random = new Random();
             Room room = rooms.get(random.nextInt(rooms.size()));
             if (room instanceof Rectangle) {
                 int doorX, doorY;
                 switch (random.nextInt(4)) {
                     case 0: // up
-                        doorX = room.minX+random.nextInt(room.maxX-room.minX+1);
-                        doorY = room.maxY+1;
+                        doorX = room.minX + random.nextInt(room.maxX - room.minX + 1);
+                        doorY = room.maxY + 1;
                         break;
                     case 1: // down
-                        doorX = room.minX+random.nextInt(room.maxX-room.minX+1);
-                        doorY = room.minY-1;
+                        doorX = room.minX + random.nextInt(room.maxX - room.minX + 1);
+                        doorY = room.minY - 1;
                         break;
                     case 2: // left
-                        doorX = room.minX-1;
-                        doorY = room.minY+random.nextInt(room.maxY-room.minY+1);
+                        doorX = room.minX - 1;
+                        doorY = room.minY + random.nextInt(room.maxY - room.minY + 1);
                         break;
                     case 3: // right
                     default:
-                        doorX = room.maxX+1;
-                        doorY = room.minY+random.nextInt(room.maxY-room.minY+1);
+                        doorX = room.maxX + 1;
+                        doorY = room.minY + random.nextInt(room.maxY - room.minY + 1);
                         break;
                 }
                 if (world[doorX][doorY] == wall) {
-                    world[doorX][doorY] = locked_door;
+                    world[doorX][doorY] = lockedDoor;
                     break;
                 }
             }

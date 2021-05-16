@@ -1,9 +1,5 @@
 package byog.Core;
 
-import byog.TileEngine.TETile;
-
-import java.util.ArrayList;
-
 public class Room {
 
     public Position base, end;
@@ -24,17 +20,5 @@ public class Room {
         maxX = Math.max(baseX, endX);
         minY = Math.min(baseY, endY);
         maxY = Math.max(baseY, endY);
-    }
-
-    @Override
-    public String toString() {
-        return "Room{" +
-                "base=" + base +
-                ", end=" + end +
-                ", minX=" + minX +
-                ", maxX=" + maxX +
-                ", minY=" + minY +
-                ", maxY=" + maxY +
-                '}';
     }
 }
