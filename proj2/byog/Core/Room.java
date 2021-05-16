@@ -2,8 +2,8 @@ package byog.Core;
 
 public class Room {
 
-    public Position base, end;
-    public int minX, maxX, minY, maxY;
+    Position base, end;
+    int minX, maxX, minY, maxY;
 
     public Room(Position b, Position e) {
         base = b;
