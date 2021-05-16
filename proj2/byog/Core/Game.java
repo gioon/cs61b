@@ -65,7 +65,7 @@ public class Game {
             tileMap.put(WALL.character(), WALL);
             tileMap.put(LOCKED_DOOR.character(), LOCKED_DOOR);
 
-            int width = lines.get(0).replace("\\n", "").length();
+            int width = lines.get(0).replace("\\R", "").length();
             int height = lines.size();
             TETile[][] world = new TETile[width][height];
             for (int x = 0; x < width; x += 1) {
@@ -74,7 +74,7 @@ public class Game {
                 }
             }
             for (int y = height - 1; y >= 0; y -= 1) {
-                String line = lines.get(height - 1 - y).replace("\\n", "");
+                String line = lines.get(height - 1 - y).replace("\\R", "");
                 for (int x = 0; x < width; x += 1) {
                     world[x][y] = tileMap.get(line.charAt(x));
                 }

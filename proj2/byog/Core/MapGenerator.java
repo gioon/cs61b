@@ -455,13 +455,13 @@ public class MapGenerator {
 
     public void generateHelper(Rectangle rec) {
         // (2)
-        System.out.println("Step 2: Generating hallways");
+//        System.out.println("Step 2: Generating hallways");
         ArrayList<Hallway> halls = generateHallways(rec);
         // (3)
-        System.out.println("Step 3: Generateing rectangles");
+//        System.out.println("Step 3: Generateing rectangles");
         ArrayList<Rectangle> recs = generateRectangles(halls);
         // (4)
-        System.out.println("Step 4: Next loop");
+//        System.out.println("Step 4: Next loop");
         for (Rectangle r: recs) {
             generateHelper(r);
         }
@@ -548,23 +548,23 @@ public class MapGenerator {
         // floor: 1~width-1 1~height-1
 
         // (1)
-        System.out.println("Step 1: Generating firstRec");
+//        System.out.println("Step 1: Generating firstRec");
         Rectangle firstRec = generateFirst();
 
         // (2)-(4)
         generateHelper(firstRec);
 
         // (5)
-        System.out.println("Step 5: Drawing");
+//        System.out.println("Step 5: Drawing");
         initialize();
         drawFloor();
         drawWall();
 
         // (6)
-        System.out.println("Step 6: Adding the door");
+//        System.out.println("Step 6: Adding the door");
         drawDoor();
 
-        System.out.println("Finished");
+//        System.out.println("Finished");
         return world;
     }
 
