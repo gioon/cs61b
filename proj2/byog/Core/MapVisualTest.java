@@ -5,6 +5,8 @@ import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 import org.junit.Test;
 
+import java.util.Random;
+
 public class MapVisualTest {
 
     private static final int WIDTH = 80;
@@ -17,7 +19,7 @@ public class MapVisualTest {
 
     @Test
     public void testInitialized() {
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, SEED, NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
         Rectangle firstRec = mg.generateFirst();
         mg.initialize();
         TETile[][] world = mg.getWorld();
@@ -28,7 +30,7 @@ public class MapVisualTest {
     public void testMapGeneratorLoop() {
         for (int seed = 0; seed < 1000; seed++) {
             MapGenerator mg = new MapGenerator(
-                    WIDTH, HEIGHT, seed, NOTHING, FLOOR, WALL, LOCKED_DOOR);
+                    WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
             try {
                 System.out.println("seed " + seed);
                 TETile[][] world = mg.generate();
@@ -41,7 +43,7 @@ public class MapVisualTest {
 
     @Test
     public void testMapGenerator() {
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, SEED, NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
         TETile[][] world = mg.generate();
         System.out.println(TETile.toString(world));
     }
@@ -50,7 +52,7 @@ public class MapVisualTest {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
 
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, SEED, NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
         TETile[][] world = mg.generate();
 
         ter.renderFrame(world);

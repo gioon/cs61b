@@ -1,0 +1,71 @@
+本项目用的StdDraw只能识别字符，所以不能使用方向键和退格键等不能打出字符的键，但是可以使用空格键
+为了能playwithInputString，不能使用与时间相关的功能，但是可以用步数
+your game cannot have any mechanic which depends on a certain amount of time passing in real life
+Keeping track of the number of turns that have elapsed is a perfectly reasonable mechanic,and might
+be an interesting thing to include in your game, e.g. maybe the game grows steadily darker in color with each step.
+You’re welcome to include other key presses like allowing the player to press space bar in order to move forwards one time step.
+
+save and load
+- :q
+- Serializable
+- Your game must be deterministic in that the same sequence of keypresses from
+the same seed must result in exactly the same behavior every time.
+- When the user restarts Game.main and presses L, the game should into exactly the same state as it was
+before the game was terminated. This state includes the state of the random number generator!
+
+Core.Game.playWithInputString(String s) must also be able to handle saving and loading in a replay string,
+e.g. “N25SDDWD:Q” would correspond to starting a new game with seed 25, then moving right, right, up, right,
+then quit/saving. The method would then return the 2D TETile[][] array at the time of save.
+If we then started the game with the replay string “LDDDD”, we’d reload the game we just saved,
+move right four times, then return the 2D TETile[][] array after the fourth move.
+
+实现Player class
+实现Saving class
+Game新建游戏时，新建player和world
+用saveGame保存player和world到saving
+
+注意不区分大小写
+
+saveGame method
+loadGame method
+
+-------------------------------------------------------------------------------------------------------------------
+
+playGame method
+
+WASD - The player must be able to control some sort of entity that can moved around using the W, A, S, and D keys.
+These keys may also do additional things, e.g. pushing objects.
+
+mouse pointer / door - The entity must be able to interact with the world in some way.
+
+door - win or lose
+
+text (wall floor door) that describes the tile currently under the mouse pointer
+- A “Heads Up Display” that provides additional information that maybe useful to the user.
+- Must have a HUD which displays relevant information somewhere outside of the area displaying the game world/tiles.
+- HUD must display description of tile upon hovering over the tile.
+HUD必须在地图之外，要用renderer的offset
+
+测试load
+playWithInputString(N999SDDDWWWDDD)
+playWithInputString(N999SDDD:Q), then playWithInputString(LWWWDDD)
+playWithInputString(N999SDDD:Q), then playWithInputString(LWWW:Q), then playWithInputString(LDDD:Q)
+playWithInputString(N999SDDD:Q), then playWithInputString(L:Q), then playWithInputString(L:Q) then playWithInputString(LWWWDDD)
+
+
+先完成上面的再做下面的
+
+Ambition Score
+(5 pts) Spiked walls which decreases a player’s health 在wall上随机生成钉子，碰到掉血
+
+Gold Points - 3 “creative mechanics”
+可以用空格键开启加速，WASD可以一次走两步，再按一次关闭或体力值耗尽（次数）关闭，需要再走一定次数才能启动
+生成传送门的能力，有两个传送门时可以相互移动，超出两个自动销毁首个再创建
+时空倒退，按一次退回十步，血量会恢复，但是传送门不会消失
+
+Lab Demo Checkoff Script
+Style Guide
+
+Q: Can I add the ability for players to customize their character before starting a game? A: Yes,
+but you’ll need to create a fourth main menu option. Your game must support exactly the API described in this spec,
+i.e. “N23123S” must always start a game with the seed 23123, and must not ask for any additional input from the player.

@@ -176,7 +176,7 @@ public class MapGenerator {
 
     private int ATTEMPT;
 
-    public MapGenerator(int width, int height, long seed,
+    public MapGenerator(int width, int height, Random random,
                         TETile nothing, TETile floor, TETile wall, TETile lockedDoor) {
         this.width = width;
         this.height = height;
@@ -191,7 +191,7 @@ public class MapGenerator {
         this.lockedDoor = lockedDoor;
 
         this.rooms = new ArrayList<Room>();
-        this.random = new Random(seed);
+        this.random = random;
 
         this.ATTEMPT = 20;
     }
@@ -490,7 +490,7 @@ public class MapGenerator {
 //        System.out.println("Step 2: Generating hallways");
         ArrayList<Hallway> halls = generateHallways(rec);
         // (3)
-//        System.out.println("Step 3: Generateing rectangles");
+//        System.out.println("Step 3: Generating rectangles");
         ArrayList<Rectangle> recs = generateRectangles(halls);
         // (4)
 //        System.out.println("Step 4: Next loop");
@@ -566,7 +566,7 @@ public class MapGenerator {
                         doorY = room.minY + random.nextInt(room.maxY - room.minY + 1);
                         break;
                 }
-                if (world[doorX][doorY] == wall) {
+                if (world[doorX][doorY].equals(wall)) {
                     world[doorX][doorY] = lockedDoor;
                     break;
                 }
