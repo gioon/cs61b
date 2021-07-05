@@ -19,7 +19,8 @@ public class MapVisualTest {
 
     @Test
     public void testInitialized() {
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED),
+                NOTHING, FLOOR, WALL, LOCKED_DOOR);
         Rectangle firstRec = mg.generateFirst();
         mg.initialize();
         TETile[][] world = mg.getWorld();
@@ -43,7 +44,8 @@ public class MapVisualTest {
 
     @Test
     public void testMapGenerator() {
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED),
+                NOTHING, FLOOR, WALL, LOCKED_DOOR);
         TETile[][] world = mg.generate();
         System.out.println(TETile.toString(world));
     }
@@ -52,7 +54,8 @@ public class MapVisualTest {
         TERenderer ter = new TERenderer();
         ter.initialize(WIDTH, HEIGHT);
 
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED),
+                NOTHING, FLOOR, WALL, LOCKED_DOOR);
         TETile[][] world = mg.generate();
 
         ter.renderFrame(world);

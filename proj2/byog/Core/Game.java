@@ -5,8 +5,13 @@ import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 import edu.princeton.cs.introcs.StdDraw;
 
-import java.awt.*;
-import java.io.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Random;
 
 public class Game {
@@ -65,7 +70,8 @@ public class Game {
 
     public void newGame(long seed) {
         random = new Random(seed);
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, random, NOTHING, FLOOR, WALL, LOCKED_DOOR);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, random,
+                NOTHING, FLOOR, WALL, LOCKED_DOOR);
         world = mg.generate();
         player = new Player(HEART);
     }
@@ -231,6 +237,7 @@ public class Game {
         switch (chars[0]) {
             case 'q':
                 System.exit(0);
+                break;
             case 'l':
                 loadGame();
                 break;
