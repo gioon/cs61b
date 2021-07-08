@@ -17,19 +17,29 @@ import java.util.Random;
 public class Game {
     TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
-    public static final int WIDTH = 70;
+    public static final int WIDTH = 60;
     public static final int HEIGHT = 35;
+    public static final int RIGHTOFFSET = 5;
+    public static final int UPOFFSET = 5;
+    public static final int LEFTOFFSET = 5; // xOffset
+    public static final int DOWNOFFSET = 5; // yOffset
+
+    public static final int CANVASWIDTH = LEFTOFFSET + WIDTH + RIGHTOFFSET;
+    public static final int CANVASHEIGHT = DOWNOFFSET + HEIGHT + UPOFFSET;
+    // canvas的width和height要加上所有OFFSET否则界面显示不全
 
     public static final TETile NOTHING = Tileset.NOTHING;
     public static final TETile FLOOR = Tileset.FLOOR;
     public static final TETile WALL = Tileset.WALL;
     public static final TETile LOCKED_DOOR = Tileset.LOCKED_DOOR;
-
-    public static final int HEART = 5;
-
+    public static final TETile UNLOCKED_DOOR = Tileset.UNLOCKED_DOOR;
+    public static final TETile PLAYER = Tileset.PLAYER;
     public static final int FONT_SIZE = 20;
 
+    public static final int HEALTH = 5;
+
     private TETile[][] world;
+    private Position doorCoord;
     private Player player;
     private Random random;
 
@@ -37,31 +47,27 @@ public class Game {
         StdDraw.clear(Color.BLACK);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
         StdDraw.setFont(font);
-        StdDraw.text(WIDTH * 0.5, HEIGHT * 0.75, "Please enter a random seed (S to stop)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.75,
+                "Please enter a random seed (S to stop)");
         font = new Font("Monaco", Font.BOLD, FONT_SIZE);
         StdDraw.setFont(font);
-        StdDraw.text(WIDTH * 0.5, HEIGHT * 0.5, s + "_");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.5, s + "_");
         StdDraw.show();
     }
 
     public Long enterRandomSeed() {
-        String seedStr;
-
+        String seedStr = "";
+        drawRandomSeed(seedStr);
         while (true) {
-            drawRandomSeed("");
-            seedStr = "";
-            while (true) {
-                if (StdDraw.hasNextKeyTyped()) {
-                    char c = StdDraw.nextKeyTyped();
-                    if (c == 's') {
-                        break;
-                    }
-                    seedStr += c;
-                    drawRandomSeed(seedStr);
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = StdDraw.nextKeyTyped();
+                if (c == 's' && !seedStr.equals("")) {
+                    break;
                 }
-            }
-            if (seedStr.matches("[0-9]+")) {
-                break;
+                if (Character.isDigit(c)) {
+                    seedStr += c;
+                }
+                drawRandomSeed(seedStr);
             }
         }
 
@@ -71,9 +77,11 @@ public class Game {
     public void newGame(long seed) {
         random = new Random(seed);
         MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, random,
-                NOTHING, FLOOR, WALL, LOCKED_DOOR);
-        world = mg.generate();
-        player = new Player(HEART);
+                NOTHING, FLOOR, WALL, LOCKED_DOOR, PLAYER);
+        mg.generate();
+        world = mg.getWorld();
+        doorCoord = mg.getDoorCoord();
+        player = new Player(mg.getPlayerCoord(), HEALTH);
     }
 
     public void loadGame() {
@@ -91,6 +99,7 @@ public class Game {
 
         random = saving.random;
         world = saving.world;
+        doorCoord = saving.doorCoord;
         player = saving.player;
 //        ArrayList<String> lines = new ArrayList<>();
 //        FileReader fr;
@@ -135,7 +144,7 @@ public class Game {
     }
 
     public void saveGame() {
-        Saving saving = new Saving(random, world, player);
+        Saving saving = new Saving(random, world, doorCoord, player);
         try {
             FileOutputStream fileOut = new FileOutputStream("data.txt");
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -155,21 +164,62 @@ public class Game {
 //        }
     }
 
+    public void playGame(char c) {
+        Position playerCoord = player.playerCoord;
+        int oldX = playerCoord.x;
+        int oldY = playerCoord.y;
+        int nextX = oldX;
+        int nextY = oldY;
+        switch (c) {
+            case 'w':
+                nextY++;
+                break;
+            case 'a':
+                nextX--;
+                break;
+            case 's':
+                nextY--;
+                break;
+            case 'd':
+                nextX++;
+                break;
+            default:
+                return;
+        }
+
+        if (world[nextX][nextY].equals(WALL)) {
+            return;
+        } else if (world[nextX][nextY].equals(FLOOR)) {
+            if (world[oldX][oldY].equals(PLAYER)) {
+                // 如果是玩家，则原位置变为地板，如果是门或其他东西，则原位置不变
+                world[oldX][oldY] = FLOOR;
+            }
+            world[nextX][nextY] = PLAYER;
+        } else if (world[nextX][nextY].equals(LOCKED_DOOR)) {
+            world[oldX][oldY] = FLOOR;
+            world[nextX][nextY] = UNLOCKED_DOOR;
+        } else if (world[nextX][nextY].equals(UNLOCKED_DOOR)) {
+            world[oldX][oldY] = FLOOR;
+        }
+
+        player.move(nextX, nextY);
+    }
+
     /**
      * Method used for playing a fresh game. The game should start from the main menu.
      */
     public void playWithKeyboard() {
-        ter.initialize(WIDTH, HEIGHT);
+        ter.initialize(CANVASWIDTH, CANVASHEIGHT, LEFTOFFSET, DOWNOFFSET);
         StdDraw.clear(Color.BLACK);
         StdDraw.setPenColor(Color.WHITE);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
         StdDraw.setFont(font);
-        StdDraw.text(WIDTH * 0.5, HEIGHT * 0.75, "CS61B: THE GAME");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.75, "CS61B: THE GAME");
         font = new Font("Monaco", Font.BOLD, FONT_SIZE);
         StdDraw.setFont(font);
-        StdDraw.text(WIDTH * 0.5, HEIGHT * 0.5, "New Game (N)");
-        StdDraw.text(WIDTH * 0.5, HEIGHT * 0.45, "Load Game (L)");
-        StdDraw.text(WIDTH * 0.5, HEIGHT * 0.4, "Quit (Q)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.5, "New Game (N)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.45, "Load Game (L)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.4, "Quit (Q)");
         StdDraw.show();
 
         char c;
@@ -192,14 +242,16 @@ public class Game {
         }
 
         ter.renderFrame(world);
+        drawHUD();
+
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
-                c = StdDraw.nextKeyTyped();
+                c = Character.toLowerCase(StdDraw.nextKeyTyped());
                 if (c == ':') {
                     while (true) {
                         if (StdDraw.hasNextKeyTyped()) {
-                            c = StdDraw.nextKeyTyped();
-                            if (Character.toLowerCase(c) == 'q') {
+                            c = Character.toLowerCase(StdDraw.nextKeyTyped());
+                            if (c == 'q') {
                                 saveGame();
                                 System.exit(0);
                             } else {
@@ -207,11 +259,36 @@ public class Game {
                             }
                         }
                     }
-                } else {
-                    break; // TODO playGame
                 }
+                playGame(c);
             }
+            StdDraw.pause(10);
+            ter.renderFrame(world);
+            drawHUD();
         }
+    }
+
+    public void drawHUD() {
+        StdDraw.setPenColor(Color.WHITE);
+        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE);
+        StdDraw.setFont(font);
+        StdDraw.text(CANVASWIDTH * 0.2,
+                // 以DOWNOFFSET + HEIGHT为基准，再加上一半的UPOFFSET
+                DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
+                "Health: " + player.health);
+
+        double mx = StdDraw.mouseX();
+        double my = StdDraw.mouseY();
+        if (mx > LEFTOFFSET && mx < LEFTOFFSET + WIDTH
+                && my > DOWNOFFSET && my < DOWNOFFSET + HEIGHT) {
+            int wx = (int) (mx - LEFTOFFSET);
+            int wy = (int) (my - DOWNOFFSET);
+            StdDraw.text(CANVASWIDTH * 0.5,
+                    DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
+                    "You see " + world[wx][wy].description() + ".");
+        }
+
+        StdDraw.show();
     }
 
     /**
@@ -234,6 +311,7 @@ public class Game {
         String inputLower = input.toLowerCase();
         char[] chars = inputLower.toCharArray();
 
+        int i = 1;
         switch (chars[0]) {
             case 'q':
                 System.exit(0);
@@ -243,26 +321,35 @@ public class Game {
                 break;
             case 'n':
                 String seedStr = "";
-                long seed = 0;
-                for (int i = 1; i < chars.length; i++) {
+                while (i < chars.length) {
                     if (Character.isDigit(chars[i])) {
                         seedStr += chars[i];
                     } else if (chars[i] == 's') {
-                        seed = Long.parseLong(seedStr);
+                        i++;
                         break;
-                    } else {
-                        throw new RuntimeException("Please enter the input string correctly!");
                     }
+                    i++;
                 }
-                newGame(seed);
+                newGame(Long.parseLong(seedStr));
                 break;
             default:
                 throw new RuntimeException("Please enter the input string correctly!");
         }
 
-        // TODO playGame
-        if (inputLower.endsWith(":q")) {
-            saveGame();
+        while (i < chars.length) {
+            if (chars[i] == ':') {
+                if (i + 1 > chars.length) {
+                    break;
+                }
+                if (chars[i + 1] == 'q') {
+                    saveGame();
+                    break;
+                }
+                i++;
+            }
+
+            playGame(chars[i]);
+            i++;
         }
 
         return world;

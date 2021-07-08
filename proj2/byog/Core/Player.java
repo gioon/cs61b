@@ -4,9 +4,16 @@ import java.io.Serializable;
 
 public class Player implements Serializable {
 
-    int heart;
+    Position playerCoord;
+    int health;
 
-    public Player(int heart) {
-        this.heart = heart;
+    public Player(Position playerCoord, int health) {
+        this.playerCoord = playerCoord;
+        this.health = health;
+    }
+
+    public void move(int nextX, int nextY) {
+        playerCoord.x = nextX;
+        playerCoord.y = nextY;
     }
 }

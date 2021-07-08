@@ -168,8 +168,9 @@ public class MapGenerator {
 
     private int width, height, roomWidth, roomHeight;
     private TETile[][] world;
+    private Position doorCoord, playerCoord;
 
-    private TETile nothing, floor, wall, lockedDoor;
+    private TETile nothing, floor, wall, lockedDoor, player;
 
     private ArrayList<Room> rooms;
     private Random random;
@@ -177,7 +178,8 @@ public class MapGenerator {
     private int ATTEMPT;
 
     public MapGenerator(int width, int height, Random random,
-                        TETile nothing, TETile floor, TETile wall, TETile lockedDoor) {
+                        TETile nothing, TETile floor, TETile wall,
+                        TETile lockedDoor, TETile player) {
         this.width = width;
         this.height = height;
         this.world = new TETile[width][height];
@@ -189,6 +191,7 @@ public class MapGenerator {
         this.floor = floor;
         this.wall = wall;
         this.lockedDoor = lockedDoor;
+        this.player = player;
 
         this.rooms = new ArrayList<Room>();
         this.random = random;
@@ -568,13 +571,30 @@ public class MapGenerator {
                 }
                 if (world[doorX][doorY].equals(wall)) {
                     world[doorX][doorY] = lockedDoor;
+                    doorCoord = new Position(doorX, doorY);
                     break;
                 }
             }
         }
     }
 
-    public TETile[][] generate() {
+    public void drawPlayer() {
+        while (true) {
+            Room room = rooms.get(random.nextInt(rooms.size()));
+            if (room instanceof Rectangle) {
+                int playerX, playerY;
+                playerX = room.minX + random.nextInt(room.maxX - room.minX + 1);
+                playerY = room.minY + random.nextInt(room.maxY - room.minY + 1);
+                if (world[playerX][playerY].equals(floor)) {
+                    world[playerX][playerY] = player;
+                    playerCoord = new Position(playerX, playerY);
+                    break;
+                }
+            }
+        }
+    }
+
+    public void generate() {
         // world: 0~width 0~height
         // floor: 1~width-1 1~height-1
 
@@ -595,11 +615,20 @@ public class MapGenerator {
 //        System.out.println("Step 6: Adding the door");
         drawDoor();
 
+        // (7)
+//        System.out.println("Step 7: Adding the player");
+        drawPlayer();
+
 //        System.out.println("Finished");
-        return world;
     }
 
     public TETile[][] getWorld() {
         return world;
+    }
+    public Position getDoorCoord() {
+        return doorCoord;
+    }
+    public Position getPlayerCoord() {
+        return playerCoord;
     }
 }

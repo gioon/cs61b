@@ -16,11 +16,12 @@ public class MapVisualTest {
     private static final TETile FLOOR = Tileset.FLOOR;
     private static final TETile WALL = Tileset.WALL;
     private static final TETile LOCKED_DOOR = Tileset.LOCKED_DOOR;
+    private static final TETile PLAYER = Tileset.PLAYER;
 
     @Test
     public void testInitialized() {
         MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED),
-                NOTHING, FLOOR, WALL, LOCKED_DOOR);
+                NOTHING, FLOOR, WALL, LOCKED_DOOR, PLAYER);
         Rectangle firstRec = mg.generateFirst();
         mg.initialize();
         TETile[][] world = mg.getWorld();
@@ -31,11 +32,11 @@ public class MapVisualTest {
     public void testMapGeneratorLoop() {
         for (int seed = 0; seed < 1000; seed++) {
             MapGenerator mg = new MapGenerator(
-                    WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR);
+                    WIDTH, HEIGHT, new Random(SEED), NOTHING, FLOOR, WALL, LOCKED_DOOR, PLAYER);
             try {
                 System.out.println("seed " + seed);
-                TETile[][] world = mg.generate();
-
+                mg.generate();
+//                TETile[][] world = mg.getWorld();
             } catch (RuntimeException e) {
                 System.out.println(seed);
             }
@@ -45,8 +46,9 @@ public class MapVisualTest {
     @Test
     public void testMapGenerator() {
         MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED),
-                NOTHING, FLOOR, WALL, LOCKED_DOOR);
-        TETile[][] world = mg.generate();
+                NOTHING, FLOOR, WALL, LOCKED_DOOR, PLAYER);
+        mg.generate();
+        TETile[][] world = mg.getWorld();
         System.out.println(TETile.toString(world));
     }
 
@@ -55,8 +57,9 @@ public class MapVisualTest {
         ter.initialize(WIDTH, HEIGHT);
 
         MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, new Random(SEED),
-                NOTHING, FLOOR, WALL, LOCKED_DOOR);
-        TETile[][] world = mg.generate();
+                NOTHING, FLOOR, WALL, LOCKED_DOOR, PLAYER);
+        mg.generate();
+        TETile[][] world = mg.getWorld();
 
         ter.renderFrame(world);
     }
