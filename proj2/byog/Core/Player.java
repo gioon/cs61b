@@ -55,7 +55,7 @@ public class Player implements Serializable {
         }
 
         if (world[nextX][nextY].equals(door.unlockedDoorTile)) {
-            System.out.println("YOU WIN");
+//            System.out.println("YOU WIN");
             return;
         }
 

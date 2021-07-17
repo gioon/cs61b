@@ -17,8 +17,8 @@ import java.util.Random;
 public class Game {
     TERenderer ter = new TERenderer();
     /* Feel free to change the width and height. */
-    public static final int WIDTH = 60;
-    public static final int HEIGHT = 35;
+    public static final int WIDTH = 45; // 60
+    public static final int HEIGHT = 25; // 35
     public static final int RIGHTOFFSET = 5;
     public static final int UPOFFSET = 5;
     public static final int LEFTOFFSET = 5; // xOffset

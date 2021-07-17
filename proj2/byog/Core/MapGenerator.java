@@ -171,13 +171,13 @@ public class MapGenerator {
     private TETile[][] world;
     private Position doorPos, playerPos, guardPos;
 
-    private static final TETile nothing = Tileset.NOTHING;
-    private static final TETile floor = Tileset.FLOOR;
-    private static final TETile wall = Tileset.WALL;
-    private static final TETile lockedDoor = Tileset.LOCKED_DOOR;
-    private static final TETile bulb = Tileset.BULB;
-    private static final TETile player = Tileset.PLAYER;
-    private static final TETile guard = Tileset.GUARD;
+    private TETile nothing = Tileset.NOTHING;
+    private TETile floor = Tileset.FLOOR;
+    private TETile wall = Tileset.WALL;
+    private TETile lockedDoor = Tileset.LOCKED_DOOR;
+    private TETile bulb = Tileset.BULB;
+    private TETile player = Tileset.PLAYER;
+    private TETile guard = Tileset.GUARD;
 
     private LightSource lightSource;
 
