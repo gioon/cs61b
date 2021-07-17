@@ -20,7 +20,7 @@ public class Tileset {
     public static final TETile PLAYER = new TETile('@', Color.white, Color.black, "player");
     public static final TETile WALL = new TETile('#', new Color(216, 128, 128), Color.darkGray,
             "wall");
-    public static final TETile FLOOR = new TETile('·', new Color(128, 192, 128), Color.black,
+    public static final TETile FLOOR = new TETile('·', Color.lightGray, Color.black,
             "floor");
     public static final TETile NOTHING = new TETile(' ', Color.black, Color.black, "nothing");
     public static final TETile GRASS = new TETile('"', Color.green, Color.black, "grass");
@@ -34,7 +34,7 @@ public class Tileset {
     public static final TETile MOUNTAIN = new TETile('▲', Color.gray, Color.black, "mountain");
     public static final TETile TREE = new TETile('♠', Color.green, Color.black, "tree");
 
-    public static final TETile BULB = new TETile('●', Color.white, Color.black, "bulb");
+    public static final TETile BULB = new TETile('●', Color.lightGray, Color.black, "bulb");
     public static final TETile[] LIGHTS = new TETile[]{
         new TETile('●', Color.white, Color.blue, "bulb with light"),
         new TETile('·', new Color(128, 192, 128),

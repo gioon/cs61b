@@ -236,7 +236,7 @@ public class MapGenerator {
 //        return firstRec;
 //    }
 
-    public Rectangle generateFirst() {
+    public Rectangle genFirst() {
         Position firstBase = new Position(
                 random.nextInt(width - 2) + 1,
                 random.nextInt(height - 2) + 1);
@@ -309,7 +309,7 @@ public class MapGenerator {
 //        return halls;
 //    }
 
-    public ArrayList<Hallway> generateHallways(Rectangle rec) {
+    public ArrayList<Hallway> genHallways(Rectangle rec) {
         // (2)
         int attempts = ATTEMPT;
         ArrayList<Hallway> halls = new ArrayList<>();
@@ -428,7 +428,7 @@ public class MapGenerator {
 //        return recs;
 //    }
 
-    public ArrayList<Rectangle> generateRectangles(ArrayList<Hallway> halls) {
+    public ArrayList<Rectangle> genRectangles(ArrayList<Hallway> halls) {
         ArrayList<Rectangle> recs = new ArrayList<>();
         Position base, end;
         Rectangle rec;
@@ -491,17 +491,17 @@ public class MapGenerator {
         return recs;
     }
 
-    public void generateHelper(Rectangle rec) {
+    public void genHelper(Rectangle rec) {
         // (2)
 //        System.out.println("Step 2: Generating hallways");
-        ArrayList<Hallway> halls = generateHallways(rec);
+        ArrayList<Hallway> halls = genHallways(rec);
         // (3)
 //        System.out.println("Step 3: Generating rectangles");
-        ArrayList<Rectangle> recs = generateRectangles(halls);
+        ArrayList<Rectangle> recs = genRectangles(halls);
         // (4)
 //        System.out.println("Step 4: Next loop");
         for (Rectangle r: recs) {
-            generateHelper(r);
+            genHelper(r);
         }
     }
 
@@ -513,7 +513,7 @@ public class MapGenerator {
         }
     }
 
-    public void drawFloor() {
+    public void genFloor() {
         for (Room room: rooms) {
             for (int x = room.minX; x <= room.maxX; x++) {
                 for (int y = room.minY; y <= room.maxY; y++) {
@@ -523,7 +523,7 @@ public class MapGenerator {
         }
     }
 
-    public void drawWall() {
+    public void genWall() {
         for (Room room: rooms) {
             for (int x = room.minX - 1, y = room.minY - 1; x <= room.maxX + 1; x++) {
                 if (!world[x][y].equals(floor)) {
@@ -548,7 +548,7 @@ public class MapGenerator {
         }
     }
 
-    public void drawDoor() {
+    public void genDoor() {
         while (true) {
             Room room = rooms.get(random.nextInt(rooms.size()));
             if (room instanceof Rectangle) {
@@ -581,8 +581,7 @@ public class MapGenerator {
         }
     }
 
-    public void drawBulb() {
-        // TODO BaseRoom
+    public void genBulb() {
         for (Room room: rooms) {
             if (room instanceof Rectangle
                     && (room.maxX - room.minX) > 2
@@ -596,10 +595,8 @@ public class MapGenerator {
         }
     }
 
-    public void drawPlayer() {
-        // TODO PlayerRoom
-        while (true) {
-            Room room = rooms.get(random.nextInt(rooms.size()));
+    public void genPlayer() {
+        for (Room room: rooms) {
             if (room instanceof Rectangle) {
                 int playerX, playerY;
                 playerX = room.minX + random.nextInt(room.maxX - room.minX + 1);
@@ -613,10 +610,9 @@ public class MapGenerator {
         }
     }
 
-    public void drawGuard() {
-        // TODO GuardRoom
-        while (true) {
-            Room room = rooms.get(random.nextInt(rooms.size()));
+    public void genGuard() {
+        for (int i = rooms.size() - 1; i >= 0; i--) {
+            Room room = rooms.get(i);
             if (room instanceof Rectangle) {
                 int guardX, guardY;
                 guardX = room.minX + random.nextInt(room.maxX - room.minX + 1);
@@ -636,32 +632,32 @@ public class MapGenerator {
 
         // (1)
 //        System.out.println("Step 1: Generating firstRec");
-        Rectangle firstRec = generateFirst();
+        Rectangle firstRec = genFirst();
 
         // (2)-(4)
-        generateHelper(firstRec);
+        genHelper(firstRec);
 
         // (5)
 //        System.out.println("Step 5: Drawing");
         initialize();
-        drawFloor();
-        drawWall();
+        genFloor();
+        genWall();
 
         // (6)
 //        System.out.println("Step 6: Adding the door");
-        drawDoor();
+        genDoor();
 
         // (7)
-        drawBulb();
+        genBulb();
 //        System.out.println("Step 7: Adding the bulbs");
 
         // (8)
 //        System.out.println("Step 8: Adding the player");
-        drawPlayer();
+        genPlayer();
 
         // (9)
 //        System.out.println("Step 9: Adding the guard");
-        drawGuard();
+        genGuard();
 
 //        System.out.println("Finished");
     }
