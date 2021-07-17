@@ -1,6 +1,7 @@
 package byog.Core;
 
 import byog.TileEngine.TETile;
+import byog.TileEngine.Tileset;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -168,18 +169,24 @@ public class MapGenerator {
 
     private int width, height, roomWidth, roomHeight;
     private TETile[][] world;
-    private Position doorCoord, playerCoord;
+    private Position doorPos, playerPos, guardPos;
 
-    private TETile nothing, floor, wall, lockedDoor, player;
+    private static final TETile nothing = Tileset.NOTHING;
+    private static final TETile floor = Tileset.FLOOR;
+    private static final TETile wall = Tileset.WALL;
+    private static final TETile lockedDoor = Tileset.LOCKED_DOOR;
+    private static final TETile bulb = Tileset.BULB;
+    private static final TETile player = Tileset.PLAYER;
+    private static final TETile guard = Tileset.GUARD;
+
+    private LightSource lightSource;
 
     private ArrayList<Room> rooms;
     private Random random;
 
     private int ATTEMPT;
 
-    public MapGenerator(int width, int height, Random random,
-                        TETile nothing, TETile floor, TETile wall,
-                        TETile lockedDoor, TETile player) {
+    public MapGenerator(int width, int height, Random random) {
         this.width = width;
         this.height = height;
         this.world = new TETile[width][height];
@@ -187,13 +194,9 @@ public class MapGenerator {
         this.roomWidth = Math.min(width - 2, width / 10);
         this.roomHeight = Math.min(height - 2, height / 5);
 
-        this.nothing = nothing;
-        this.floor = floor;
-        this.wall = wall;
-        this.lockedDoor = lockedDoor;
-        this.player = player;
+        this.lightSource = new LightSource();
 
-        this.rooms = new ArrayList<Room>();
+        this.rooms = new ArrayList<>();
         this.random = random;
 
         this.ATTEMPT = 20;
@@ -571,14 +574,30 @@ public class MapGenerator {
                 }
                 if (world[doorX][doorY].equals(wall)) {
                     world[doorX][doorY] = lockedDoor;
-                    doorCoord = new Position(doorX, doorY);
+                    doorPos = new Position(doorX, doorY);
                     break;
                 }
             }
         }
     }
 
+    public void drawBulb() {
+        // TODO BaseRoom
+        for (Room room: rooms) {
+            if (room instanceof Rectangle
+                    && (room.maxX - room.minX) > 2
+                    && (room.maxY - room.minY) > 2) {
+                int bulbX, bulbY;
+                bulbX = room.minX + random.nextInt(room.maxX - room.minX + 1);
+                bulbY = room.minY + random.nextInt(room.maxY - room.minY + 1);
+                world[bulbX][bulbY] = bulb;
+                lightSource.addBulb(new Position(bulbX, bulbY), room);
+            }
+        }
+    }
+
     public void drawPlayer() {
+        // TODO PlayerRoom
         while (true) {
             Room room = rooms.get(random.nextInt(rooms.size()));
             if (room instanceof Rectangle) {
@@ -587,7 +606,24 @@ public class MapGenerator {
                 playerY = room.minY + random.nextInt(room.maxY - room.minY + 1);
                 if (world[playerX][playerY].equals(floor)) {
                     world[playerX][playerY] = player;
-                    playerCoord = new Position(playerX, playerY);
+                    playerPos = new Position(playerX, playerY);
+                    break;
+                }
+            }
+        }
+    }
+
+    public void drawGuard() {
+        // TODO GuardRoom
+        while (true) {
+            Room room = rooms.get(random.nextInt(rooms.size()));
+            if (room instanceof Rectangle) {
+                int guardX, guardY;
+                guardX = room.minX + random.nextInt(room.maxX - room.minX + 1);
+                guardY = room.minY + random.nextInt(room.maxY - room.minY + 1);
+                if (world[guardX][guardY].equals(floor)) {
+                    world[guardX][guardY] = guard;
+                    guardPos = new Position(guardX, guardY);
                     break;
                 }
             }
@@ -616,8 +652,16 @@ public class MapGenerator {
         drawDoor();
 
         // (7)
-//        System.out.println("Step 7: Adding the player");
+        drawBulb();
+//        System.out.println("Step 7: Adding the bulbs");
+
+        // (8)
+//        System.out.println("Step 8: Adding the player");
         drawPlayer();
+
+        // (9)
+//        System.out.println("Step 9: Adding the guard");
+        drawGuard();
 
 //        System.out.println("Finished");
     }
@@ -625,10 +669,16 @@ public class MapGenerator {
     public TETile[][] getWorld() {
         return world;
     }
-    public Position getDoorCoord() {
-        return doorCoord;
+    public Position getDoorPos() {
+        return doorPos;
     }
-    public Position getPlayerCoord() {
-        return playerCoord;
+    public LightSource getLightSource() {
+        return lightSource;
+    }
+    public Position getPlayerPos() {
+        return playerPos;
+    }
+    public Position getGuardPos() {
+        return guardPos;
     }
 }

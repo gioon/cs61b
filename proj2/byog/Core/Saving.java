@@ -9,13 +9,20 @@ public class Saving implements Serializable {
 
     Random random;
     TETile[][] world;
-    Position doorCoord;
+    Door door;
+    LightSource lightSource;
     Player player;
+    Guard guard;
+    Shade shade;
 
-    public Saving(Random random, TETile[][] world, Position doorCoord, Player player) {
+    public Saving(Random random, TETile[][] world, Door door,
+                  LightSource lightSource, Player player, Guard guard, Shade shade) {
         this.random = random;
         this.world = world;
-        this.doorCoord = doorCoord;
+        this.door = door;
+        this.lightSource = lightSource;
         this.player = player;
+        this.guard = guard;
+        this.shade = shade;
     }
 }

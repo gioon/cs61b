@@ -33,15 +33,22 @@ public class Game {
     public static final TETile WALL = Tileset.WALL;
     public static final TETile LOCKED_DOOR = Tileset.LOCKED_DOOR;
     public static final TETile UNLOCKED_DOOR = Tileset.UNLOCKED_DOOR;
+    public static final TETile BULB = Tileset.BULB;
     public static final TETile PLAYER = Tileset.PLAYER;
-    public static final int FONT_SIZE = 20;
+    public static final TETile GUARD = Tileset.GUARD;
+
+    public static final int FONT_SIZE = 16;
 
     public static final int HEALTH = 5;
 
     private TETile[][] world;
-    private Position doorCoord;
+    private Door door;
+    private LightSource lightSource;
     private Player player;
+    private Guard guard;
     private Random random;
+
+    private Shade shade;
 
     public void drawRandomSeed(String s) {
         StdDraw.clear(Color.BLACK);
@@ -49,7 +56,7 @@ public class Game {
         StdDraw.setFont(font);
         StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.75,
                 "Please enter a random seed (S to stop)");
-        font = new Font("Monaco", Font.BOLD, FONT_SIZE);
+        font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
         StdDraw.setFont(font);
         StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.5, s + "_");
         StdDraw.show();
@@ -76,12 +83,15 @@ public class Game {
 
     public void newGame(long seed) {
         random = new Random(seed);
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, random,
-                NOTHING, FLOOR, WALL, LOCKED_DOOR, PLAYER);
+        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, random);
         mg.generate();
         world = mg.getWorld();
-        doorCoord = mg.getDoorCoord();
-        player = new Player(mg.getPlayerCoord(), HEALTH);
+        door = new Door(mg.getDoorPos(), LOCKED_DOOR, UNLOCKED_DOOR);
+        lightSource = mg.getLightSource();
+        guard = new Guard(mg.getGuardPos(), FLOOR, GUARD);
+        player = new Player(mg.getPlayerPos(), HEALTH, FLOOR, PLAYER, WALL, guard, door);
+        shade = new Shade(WIDTH, HEIGHT, NOTHING);
+        lightSource.initialize();
     }
 
     public void loadGame() {
@@ -99,8 +109,11 @@ public class Game {
 
         random = saving.random;
         world = saving.world;
-        doorCoord = saving.doorCoord;
+        door = saving.door;
+        lightSource = saving.lightSource;
         player = saving.player;
+        guard = saving.guard;
+        shade = saving.shade;
 //        ArrayList<String> lines = new ArrayList<>();
 //        FileReader fr;
 //        try {
@@ -144,7 +157,7 @@ public class Game {
     }
 
     public void saveGame() {
-        Saving saving = new Saving(random, world, doorCoord, player);
+        Saving saving = new Saving(random, world, door, lightSource, player, guard, shade);
         try {
             FileOutputStream fileOut = new FileOutputStream("data.txt");
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -165,44 +178,44 @@ public class Game {
     }
 
     public void playGame(char c) {
-        Position playerCoord = player.playerCoord;
-        int oldX = playerCoord.x;
-        int oldY = playerCoord.y;
-        int nextX = oldX;
-        int nextY = oldY;
         switch (c) {
             case 'w':
-                nextY++;
-                break;
             case 'a':
-                nextX--;
-                break;
             case 's':
-                nextY--;
-                break;
             case 'd':
-                nextX++;
-                break;
-            default:
+                player.move(world, c); // seed 136 for test
                 return;
+            case '1':
+                shade.change();
+                return;
+            case '2':
+                lightSource.change(world, player, guard);
+                return;
+            default:
+        }
+    }
+
+    public void drawHUD() {
+        StdDraw.setPenColor(Color.WHITE);
+        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
+        StdDraw.setFont(font);
+        StdDraw.text(CANVASWIDTH * 0.2,
+                // 以DOWNOFFSET + HEIGHT为基准，再加上一半的UPOFFSET
+                DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
+                "Health: " + player.health);
+
+        double mx = StdDraw.mouseX();
+        double my = StdDraw.mouseY();
+        if (mx > LEFTOFFSET && mx < LEFTOFFSET + WIDTH
+                && my > DOWNOFFSET && my < DOWNOFFSET + HEIGHT) {
+            int wx = (int) (mx - LEFTOFFSET);
+            int wy = (int) (my - DOWNOFFSET);
+            StdDraw.text(CANVASWIDTH * 0.5,
+                    DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
+                    "You see " + world[wx][wy].description() + ".");
         }
 
-        if (world[nextX][nextY].equals(WALL)) {
-            return;
-        } else if (world[nextX][nextY].equals(FLOOR)) {
-            if (world[oldX][oldY].equals(PLAYER)) {
-                // 如果是玩家，则原位置变为地板，如果是门或其他东西，则原位置不变
-                world[oldX][oldY] = FLOOR;
-            }
-            world[nextX][nextY] = PLAYER;
-        } else if (world[nextX][nextY].equals(LOCKED_DOOR)) {
-            world[oldX][oldY] = FLOOR;
-            world[nextX][nextY] = UNLOCKED_DOOR;
-        } else if (world[nextX][nextY].equals(UNLOCKED_DOOR)) {
-            world[oldX][oldY] = FLOOR;
-        }
-
-        player.move(nextX, nextY);
+        StdDraw.show();
     }
 
     /**
@@ -212,14 +225,14 @@ public class Game {
         ter.initialize(CANVASWIDTH, CANVASHEIGHT, LEFTOFFSET, DOWNOFFSET);
         StdDraw.clear(Color.BLACK);
         StdDraw.setPenColor(Color.WHITE);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
+        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
         StdDraw.setFont(font);
         StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.75, "CS61B: THE GAME");
-        font = new Font("Monaco", Font.BOLD, FONT_SIZE);
+        font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
         StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.5, "New Game (N)");
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.45, "Load Game (L)");
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.4, "Quit (Q)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.52, "New Game (N)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.46, "Load Game (L)");
+        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.40, "Quit (Q)");
         StdDraw.show();
 
         char c;
@@ -263,32 +276,13 @@ public class Game {
                 playGame(c);
             }
             StdDraw.pause(10);
-            ter.renderFrame(world);
+            if (shade.isOpen()) {
+                ter.renderFrame(shade.getShade(world, player));
+            } else {
+                ter.renderFrame(world);
+            }
             drawHUD();
         }
-    }
-
-    public void drawHUD() {
-        StdDraw.setPenColor(Color.WHITE);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE);
-        StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.2,
-                // 以DOWNOFFSET + HEIGHT为基准，再加上一半的UPOFFSET
-                DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
-                "Health: " + player.health);
-
-        double mx = StdDraw.mouseX();
-        double my = StdDraw.mouseY();
-        if (mx > LEFTOFFSET && mx < LEFTOFFSET + WIDTH
-                && my > DOWNOFFSET && my < DOWNOFFSET + HEIGHT) {
-            int wx = (int) (mx - LEFTOFFSET);
-            int wy = (int) (my - DOWNOFFSET);
-            StdDraw.text(CANVASWIDTH * 0.5,
-                    DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
-                    "You see " + world[wx][wy].description() + ".");
-        }
-
-        StdDraw.show();
     }
 
     /**
