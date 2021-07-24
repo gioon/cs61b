@@ -1,8 +1,12 @@
 package byog.Core;
 
+import byog.Core.Feature.LightSource;
+import byog.Core.Feature.Shade;
+import byog.Core.Unit.Door;
+import byog.Core.Unit.Guard;
+import byog.Core.Unit.Player;
 import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
-import byog.TileEngine.Tileset;
 import edu.princeton.cs.introcs.StdDraw;
 
 import java.awt.Color;
@@ -15,54 +19,58 @@ import java.io.ObjectOutputStream;
 import java.util.Random;
 
 public class Game {
-    TERenderer ter = new TERenderer();
-    /* Feel free to change the width and height. */
-    public static final int WIDTH = 60;
-    public static final int HEIGHT = 35;
-    public static final int RIGHTOFFSET = 5;
-    public static final int UPOFFSET = 5;
-    public static final int LEFTOFFSET = 5; // xOffset
-    public static final int DOWNOFFSET = 5; // yOffset
+    private final TERenderer ter = new TERenderer();
 
-    public static final int CANVASWIDTH = LEFTOFFSET + WIDTH + RIGHTOFFSET;
-    public static final int CANVASHEIGHT = DOWNOFFSET + HEIGHT + UPOFFSET;
-    // canvas的width和height要加上所有OFFSET否则界面显示不全
+    private static final int C_WIDTH = Parameters.C_WIDTH;
+    private static final int C_HEIGHT = Parameters.C_HEIGHT;
+    private static final int MAX_WIDTH = Parameters.MAX_WIDTH;
+    private static final int MAX_HEIGHT = Parameters.MAX_HEIGHT;
+    private static final int INC_WIDTH = Parameters.INC_WIDTH;
+    private static final int INC_HEIGHT = Parameters.INC_HEIGHT;
+    private static final int FONT_SIZE = Parameters.FONT_SIZE;
+    private static final int ROUND = Parameters.ROUND;
 
-    public static final TETile NOTHING = Tileset.NOTHING;
-    public static final TETile FLOOR = Tileset.FLOOR;
-    public static final TETile WALL = Tileset.WALL;
-    public static final TETile LOCKED_DOOR = Tileset.LOCKED_DOOR;
-    public static final TETile UNLOCKED_DOOR = Tileset.UNLOCKED_DOOR;
-    public static final TETile BULB = Tileset.BULB;
-    public static final TETile PLAYER = Tileset.PLAYER;
-    public static final TETile GUARD = Tileset.GUARD;
+    private int width = MAX_WIDTH - (ROUND - 1) * INC_WIDTH;
+    private int height = MAX_HEIGHT - (ROUND - 1) * INC_HEIGHT;
+    private int rOff = (C_WIDTH - width) / 2; // right offset
+    private int uOff = (C_HEIGHT - height) / 2; // up offset
+    private int lOff = C_WIDTH - width - rOff; // left offset - xOffset
+    private int dOff = C_HEIGHT - height - uOff; // down offset - yOffset
+    // canvas的width和height包含offset和map的Width和height否则界面显示不全
 
-    public static final int FONT_SIZE = 16;
-
-    public static final int HEALTH = 5;
-
+    private int round;
+    private Random random;
     private TETile[][] world;
     private Door door;
-    private LightSource lightSource;
     private Player player;
+    private LightSource lightSource;
     private Guard guard;
-    private Random random;
-
     private Shade shade;
 
-    public void drawRandomSeed(String s) {
+    private void changeWidthAndHeight() {
+        if (width + INC_WIDTH <= MAX_WIDTH && height + INC_HEIGHT <= MAX_HEIGHT) {
+            width += INC_WIDTH;
+            height += INC_HEIGHT;
+            rOff = (C_WIDTH - width) / 2;
+            uOff = (C_HEIGHT - height) / 2;
+            lOff = C_WIDTH - width - rOff;
+            dOff = C_HEIGHT - height - uOff;
+        }
+    }
+
+    private void drawRandomSeed(String s) {
         StdDraw.clear(Color.BLACK);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
         StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.75,
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75,
                 "Please enter a random seed (S to stop)");
         font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
         StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.5, s + "_");
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s + "_");
         StdDraw.show();
     }
 
-    public Long enterRandomSeed() {
+    private Long enterRandomSeed() {
         String seedStr = "";
         drawRandomSeed(seedStr);
         while (true) {
@@ -77,24 +85,21 @@ public class Game {
                 drawRandomSeed(seedStr);
             }
         }
-
         return Long.parseLong(seedStr);
     }
 
-    public void newGame(long seed) {
-        random = new Random(seed);
-        MapGenerator mg = new MapGenerator(WIDTH, HEIGHT, random);
+    private void newGame() {
+        MapGenerator mg = new MapGenerator(width, height, random);
         mg.generate();
         world = mg.getWorld();
-        door = new Door(mg.getDoorPos(), LOCKED_DOOR, UNLOCKED_DOOR);
+        door = mg.getDoor();
+        player = mg.getPlayer();
         lightSource = mg.getLightSource();
-        guard = new Guard(mg.getGuardPos(), FLOOR, GUARD);
-        player = new Player(mg.getPlayerPos(), HEALTH, FLOOR, PLAYER, WALL, guard, door);
-        shade = new Shade(WIDTH, HEIGHT, NOTHING);
-        lightSource.initialize();
+        guard = mg.getGuard();
+        shade = mg.getShade();
     }
 
-    public void loadGame() {
+    private void loadGame() {
         Saving saving = null;
 
         try {
@@ -107,57 +112,25 @@ public class Game {
             System.exit(0); // 没有存档会直接退出
         }
 
-        random = saving.random;
-        world = saving.world;
-        door = saving.door;
-        lightSource = saving.lightSource;
-        player = saving.player;
-        guard = saving.guard;
-        shade = saving.shade;
-//        ArrayList<String> lines = new ArrayList<>();
-//        FileReader fr;
-//        try {
-//            fr = new FileReader("data.txt");
-//        } catch (IOException e) {
-//            System.exit(0); // 没有存档会直接退出
-//            return;
-//        }
-//        try {
-//            BufferedReader br = new BufferedReader(fr);
-//            String line;
-//            while ((line = br.readLine()) != null) {
-//                lines.add(line);
-//            }
-//            br.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//        Map<Character, TETile> tileMap = new HashMap<>();
-//        tileMap.put(NOTHING.character(), NOTHING);
-//        tileMap.put(FLOOR.character(), FLOOR);
-//        tileMap.put(WALL.character(), WALL);
-//        tileMap.put(LOCKED_DOOR.character(), LOCKED_DOOR);
-//
-//        int width = lines.get(0).replace("\\R", "").length();
-//        int height = lines.size();
-//
-//        world = new TETile[width][height];
-//        for (int x = 0; x < width; x += 1) {
-//            for (int y = 0; y < height; y += 1) {
-//                world[x][y] = NOTHING;
-//            }
-//        }
-//        for (int y = height - 1; y >= 0; y -= 1) {
-//            String line = lines.get(height - 1 - y).replace("\\R", "");
-//            for (int x = 0; x < width; x += 1) {
-//                world[x][y] = tileMap.get(line.charAt(x));
-//            }
-//        }
+        random = saving.getRandom();
+        world = saving.getWorld();
+        door = saving.getDoor();
+        player = saving.getPlayer();
+        lightSource = saving.getLightSource();
+        guard = saving.getGuard();
+        shade = saving.getShade();
     }
 
-    public void saveGame() {
-        Saving saving = new Saving(random, world, door, lightSource, player, guard, shade);
+    private void saveGame() {
+        Saving saving = new Saving();
+        saving.setRandom(random);
+        saving.setWorld(world);
+        saving.setDoor(door);
+        saving.setPlayer(player);
+        saving.setLightSource(lightSource);
+        saving.setGuard(guard);
+        saving.setShade(shade);
+
         try {
             FileOutputStream fileOut = new FileOutputStream("data.txt");
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -167,23 +140,15 @@ public class Game {
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        String worldString = TETile.toString(world);
-//        try {
-//            FileWriter fw = new FileWriter("data.txt");
-//            fw.write(worldString);
-//            fw.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
-    public void playGame(char c) {
+    private void playGame(char c) {
         switch (c) {
             case 'w':
             case 'a':
             case 's':
             case 'd':
-                player.move(world, c); // seed 136 for test
+                player.move(world, door, guard, c);
                 return;
             case '1':
                 shade.change();
@@ -195,26 +160,38 @@ public class Game {
         }
     }
 
-    public void drawHUD() {
+    private void drawHUD() {
         StdDraw.setPenColor(Color.WHITE);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
         StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.2,
-                // 以DOWNOFFSET + HEIGHT为基准，再加上一半的UPOFFSET
-                DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
-                "Health: " + player.health);
+        StdDraw.text(C_WIDTH * 0.2, C_HEIGHT * 0.9,
+                "❤ x " + player.getHealth());
 
         double mx = StdDraw.mouseX();
         double my = StdDraw.mouseY();
-        if (mx > LEFTOFFSET && mx < LEFTOFFSET + WIDTH
-                && my > DOWNOFFSET && my < DOWNOFFSET + HEIGHT) {
-            int wx = (int) (mx - LEFTOFFSET);
-            int wy = (int) (my - DOWNOFFSET);
-            StdDraw.text(CANVASWIDTH * 0.5,
-                    DOWNOFFSET + HEIGHT + UPOFFSET * 0.5,
+        if (mx > lOff && mx < lOff + width
+                && my > dOff && my < dOff + height) {
+            int wx = (int) (mx - lOff);
+            int wy = (int) (my - dOff);
+            StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.9,
                     "You see " + world[wx][wy].description() + ".");
         }
 
+        StdDraw.show();
+    }
+
+    private void drawMenu() {
+        ter.initialize(C_WIDTH, C_HEIGHT, lOff, dOff);
+        StdDraw.clear(Color.BLACK);
+        StdDraw.setPenColor(Color.WHITE);
+        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
+        StdDraw.setFont(font);
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75, "CS61B: THE GAME");
+        font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
+        StdDraw.setFont(font);
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.52, "New Game (N)");
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.46, "Load Game (L)");
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.40, "Quit (Q)");
         StdDraw.show();
     }
 
@@ -222,18 +199,7 @@ public class Game {
      * Method used for playing a fresh game. The game should start from the main menu.
      */
     public void playWithKeyboard() {
-        ter.initialize(CANVASWIDTH, CANVASHEIGHT, LEFTOFFSET, DOWNOFFSET);
-        StdDraw.clear(Color.BLACK);
-        StdDraw.setPenColor(Color.WHITE);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
-        StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.75, "CS61B: THE GAME");
-        font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-        StdDraw.setFont(font);
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.52, "New Game (N)");
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.46, "Load Game (L)");
-        StdDraw.text(CANVASWIDTH * 0.5, CANVASHEIGHT * 0.40, "Quit (Q)");
-        StdDraw.show();
+        drawMenu();
 
         char c;
         while (true) {
@@ -251,7 +217,8 @@ public class Game {
             loadGame();
         }
         if (c == 'n') {
-            newGame(enterRandomSeed());
+            random = new Random(enterRandomSeed());
+            newGame();
         }
 
         ter.renderFrame(world);
@@ -324,7 +291,8 @@ public class Game {
                     }
                     i++;
                 }
-                newGame(Long.parseLong(seedStr));
+                random = new Random(Long.parseLong(seedStr));
+                newGame();
                 break;
             default:
                 throw new RuntimeException("Please enter the input string correctly!");

@@ -1,14 +1,14 @@
-package byog.Core;
+package byog.Core.Feature;
 
+import byog.Core.Unit.Player;
 import byog.TileEngine.TETile;
 
 import java.io.Serializable;
 
 public class Shade implements Serializable {
-
-    int width, height;
-    TETile[][] origin, shade;
-    boolean open;
+    private int width, height;
+    private TETile[][] origin, shade;
+    private boolean open;
 
     public Shade(int width, int height, TETile nothing) {
         this.width = width;
@@ -37,8 +37,8 @@ public class Shade implements Serializable {
             System.arraycopy(origin[i], 0, shade[i], 0, height);
         }
 
-        int x = player.getPlayerPos().x;
-        int y = player.getPlayerPos().y;
+        int x = player.getPlayerPos().getX();
+        int y = player.getPlayerPos().getY();
         for (int i = x - 5; i <= x + 5; i++) {
             if (i >= 0 && i <= width - 1) {
                 for (int j = y - 5; j <= y + 5; j++) {

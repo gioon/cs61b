@@ -1,629 +1,389 @@
 package byog.Core;
 
+import byog.Core.Feature.LightSource;
+import byog.Core.Feature.Shade;
+import byog.Core.Map.Hallway;
+import byog.Core.Map.Rect;
+import byog.Core.Map.Room;
+import byog.Core.Unit.Door;
+import byog.Core.Unit.Guard;
+import byog.Core.Unit.Player;
+import byog.Core.Map.Position;
 import byog.TileEngine.TETile;
-import byog.TileEngine.Tileset;
 
 import java.util.ArrayList;
 import java.util.Random;
 
 public class MapGenerator {
+    private final TETile NOTHING = Parameters.NOTHING;
+    private final TETile FLOOR = Parameters.FLOOR;
+    private final TETile WALL = Parameters.WALL;
+    private final TETile LOCKED_DOOR = Parameters.LOCKED_DOOR;
+    private final TETile UNLOCKED_DOOR = Parameters.UNLOCKED_DOOR;
+    private final TETile PLAYER = Parameters.PLAYER;
+    private final TETile BULB = Parameters.BULB;
+    private final TETile[] LIGHTS = Parameters.LIGHTS;
+    private final TETile GUARD = Parameters.GUARD;
+    private final int ATTEMPT = Parameters.ATTEMPT;
+    private final int HEALTH = Parameters.HEALTH;
 
-    /**
-     * rooms connected by hallways
-     * Your game should be able to handle any positive seed up to 9,223,372,036,854,775,807.
-     * The world must be pseudorandomly generated.
-     * At least some rooms should be rectangular.
-     * Your game must be capable of generating hallways that include turns
-     * (or equivalently, straight hallways that intersect).
-     * The world should contain a random number of rooms and hallways.
-     * The locations of the rooms and hallways should be random.
-     * The width and height of rooms should be random.
-     * The length of hallways should be random.
-     *
-     * 方案0：
-     * room生成条件：
-     * room在生成时不可越出world的边界（1/width-1/height-1/1）
-     * room在生成时不可覆盖之前的room和hallway的边界(+1)
-     * 流程：
-     * 随机生成一个room
-     * 在其周围random个格子处生成0-2个nextRoom
-     * 用hallway连接room和这些nextRoom
-     * 在这些nextRoom的周围random个格子处生成0-2个nextRoom
-     * 继续用hallway连接
-     * 如此循环，最后在连接后的room和hallway边界上依次铺上wall（如果wall覆盖到room则不覆盖）
-     *
-     * 方案1：
-     * 铺设一条总的hallway，有多条分支hallway
-     * 在hallway上用nextPoint选取节点
-     * 铺一个room后，用nextPoint选取下一个，再铺
-     *
-     * 方案2：
-     * 随机生成一个点，铺一个room，再随机生成另一个点，用hallway连接，铺另一个room
-     *
-     * 方案3：
-     * 把hallway当成width=1的room，把不规则的形状当成room，room和hallway交替连接
-     *
-     * 方案4：
-     * 随机生成N个room和hallway，把有相交的放到一起作为set，删掉没有相交的outlier
-     * 把set里的room和hallway周围铺上wall，如果铺的时候不是NOTHING就不铺（换句话说，把周围非NOTHING的铺上wall）
-     * room和hallway生成时，确保比WIDTH和HEIGHT小1，并且整个不越界
-     *
-     * 方案5：
-     * 生成N个连续的room，用nextRoom确保连续
-     * 每个room有一个door(branch)出口（结束的room没有）
-     * door的求法：原room的
-     *
-     * 重点在于：
-     * 1. 如何表示room？
-     * 2. 如何生成room？
-     * 3. nextRoom
-     * 假设room在生成时最外层是wall内层是floor
-     * 有随机N个col，后一个col在前一个col的范围内生成，采用RandomUtils.java里的随机数生成方法
-     * 如果room超出WIDTH和HEIGHT，就重新生成
-     * 用nextRoom生成room时，只要其对应的格子有一个不是NOTHING(overlap)，就重新生成
-     *
-     * 先由随机数确定room具体个数n
-     * 用rooms保存所有生成的room
-     * 用nextRoom（in随机）生成第一个room及其out（用overlap检验）
-     * 用nextRoom生成下一个room及其out（由前一个room的out生成下一个room的in，用overlap检验）
-     * 根据rooms，用addRooms在world上铺rooms，内部floor和最外层wall(Tileset)
-     * 第一个的in和最后一个的out铺wall
-     *
-     * 先写生成room的方法，再写返回整个world的方法(generate)
-     * 最终改进：
-     * 为了保证美观，求所有的room的min/max weight/height，在此范围内draw
-     * （Game.java里的WIDTH/HEIGHT为默认min/max，在一个范围内再缩小范围）
-     *
-     * 方案6：
-     * MapParameter类存储所有参数
-     * 点的生成、room里的floor的生成要设置maxWidth maxHeight（后期再根据random seed改变）
-     * 点点相连，先不管wall，先生成room里的floor，全为rectangle
-     * 以左下角为base生成room里的floor
-     * 第一步：
-     * 随机生成点A，再用next随机生成点B（或N个点B），据此在A和B（或N+1点）间，以点A为base生成room里的floor
-     * 第二步：
-     * 再在点B（或N个点B）上用next随机生成点C（或N个点C），这样递归生成room里的floor
-     * 直到生成的点超出边界，停止生成room里的floor
-     * 最后再铺wall，铺的时候除非碰到wall或floor，每个格子周围8个格子都要铺
-     * room - addFloor - addWall
-     *
-     * 两个position组成一个room里的floor
-     *
-     * 方案7（方案6的基础上提出）：
-     * room: rectangle hallway
-     * room = floor + wall
-     *
-     * 先生成rectangle（因为比较通用）
-     * hallway和rectangle交替生成，rectangle可以是width height均为1的，hallway必须x=x或y=y
-     * 交替生成两种点，rectangle base生成N个hallway base，hallway base只能生成1个rectangle base
-     * 当前rectangle base和后续（N个）hallway base生成当前rectangle
-     * 当前hallway base和后续（1个）rectangle base生成当前hallway width/height=1
-     *
-     * 生成点时要判断overlap，生成hallway / rectangle时也要判断overlap
-     * 据此，hallway有横、竖两种可能的生成方式，需判断是否overlap，若均overlap则停止生成hallway，该branch中止
-     * overlap根据floor判断，由于没有wall，需要+1，以确保hallway不会在rectangle的边上
-     *
-     * 方案8（方案7的基础上提出）：
-     * generate方法：
-     * （base是rectangle或hallway的start）
-     * （1）生成1个rectangle base（确保不要outOfBound）
-     * （2）根据（1）的rectangle base生成rectangle
-     * （除第1个，都要判断overlap，如果overlap，停止）（确保不要outOfBound）
-     * （3）根据（2）的rectangle，在其周围生成N个hallway base（确保不要outOfBound）
-     * （4）根据（3）的每个hallway base生成hallway（判断overlap，如果overlap，停止）（确保不要outOfBound）
-     * （5）根据（4）的每个hallway，在其周围生成1个rectangle base（确保不要outOfBound），重复（2）-（5）
-     * （6）当全部停止时，调用drawFloor和drawWall对TETile[][] world进行操作
-     * 注：
-     * 边创建base，边创建rectangle hallway，这些是floor
-     * 生成rectangle base / hallway base / rectangle / hallway时确保不要outOfBound
-     * 生成rectangle / hallway后判断overlap
-     *
-     * 方法：overlap、drawFloor、drawWall
-     * 类：Position、Rectangle、Hallway、Room
-     *
-     * 方案9（方案8的基础上提出）：
-     * generate方法：
-     * 1个rectangle可生成N个hallway
-     * 1个hallway只可生成1个rectangle
-     * （1）生成1个rectangle（生成时确保不要outOfBound）
-     * （2）根据（1）的rectangle生成1-4个hallway
-     * （生成时确保不要outOfBound，如果无法实现，停止）
-     * （生成后判断overlap，如果overlap，尝试attempt次后停止）
-     * （3）根据（2）的每个hallway生成1个rectangle
-     * （生成时确保不要outOfBound，如果无法实现，停止）
-     * （生成后判断overlap，如果overlap，尝试attempt次后停止）
-     * （4）根据（3）的每个rectangle生成1-4个hallway
-     * （生成时确保不要outOfBound，如果无法实现，停止）
-     * （生成后判断overlap，如果overlap，尝试attempt次后停止）
-     *  重复（3）-（4）
-     * （5）当全部停止时，调用drawBackground drawFloor drawWall对TETile[][] world进行操作
-     * （6）随机选取其中1个wall作为door
-     * 注：
-     * 用base end表示rectangle hallway
-     * 创建的rectangle hallway是floor
-     * door不能在角落
-     *
-     * 方法：overlap、drawFloor、drawWall
-     * 类：Position、Rectangle、Hallway、Room
-     */
+    private final int width;
+    private final int height;
+    private final int rectWidth;
+    private final int rectHeight;
 
-    /**
-     * Create a Room class and keep a list of all existing rooms during world generation.
-     * Write an overlap method for the Room class,
-     * and reject any generated room that overlaps an existing one.
-     * If you need to return multiple things, make a class that has multiple fields.
-     *
-     * In my case, I wrote a MapGenerator class,
-     * and created a MapVisualTest class that called methods
-     * in MapGenerator directly. This avoided need to collect a seed from the user.
-     * Afterwards, I wrote playWithInputString to collect the seed from the input string
-     * (e.g. “N1234S” gives seed 1234) and pass it to MapGenerator.
-     * Our autograder for phase 1 will use playWithInputString only.
-     *
-     * Emergent approach: For each room,
-     * randomly generate neighbor rooms that branch off of the current room.
-     * Since a hallway is just a width 1 room,
-     * this algorithm is capable of generating turning hallways.
-     *
-     */
-
-    private int width, height, roomWidth, roomHeight;
-    private TETile[][] world;
-    private Position doorPos, playerPos, guardPos;
-
-    private TETile nothing = Tileset.NOTHING;
-    private TETile floor = Tileset.FLOOR;
-    private TETile wall = Tileset.WALL;
-    private TETile lockedDoor = Tileset.LOCKED_DOOR;
-    private TETile bulb = Tileset.BULB;
-    private TETile player = Tileset.PLAYER;
-    private TETile guard = Tileset.GUARD;
-
-    private LightSource lightSource;
-
-    private ArrayList<Room> rooms;
     private Random random;
+    private TETile[][] world;
+    private Door door;
+    private Player player;
+    private LightSource lightSource;
+    private Guard guard;
+    private Shade shade;
 
-    private int ATTEMPT;
+    private ArrayList<Rect> rects;
 
     public MapGenerator(int width, int height, Random random) {
         this.width = width;
         this.height = height;
+        this.rectWidth = Math.min(width - 2, width / 5);
+        this.rectHeight = Math.min(height - 2, height / 3);
+
+        this.random = random;
         this.world = new TETile[width][height];
 
-        this.roomWidth = Math.min(width - 2, width / 10);
-        this.roomHeight = Math.min(height - 2, height / 5);
-
-        this.lightSource = new LightSource();
-
-        this.rooms = new ArrayList<>();
-        this.random = random;
-
-        this.ATTEMPT = 20;
+        this.rects = new ArrayList<>();
     }
 
-    public boolean overlap(Room target, Room except) {
-        for (Room room: rooms) {
-            if (room.equals(except)) {
+    private boolean notOverlap(Rect target, Rect except) {
+        for (Rect rect : rects) {
+            if (rect.equals(except)) {
                 continue;
             }
-            if (target.maxX < room.minX - 2
-                    || target.minX > room.maxX + 2
-                    || target.maxY < room.minY - 2
-                    || target.minY > room.maxY + 2) {
+            if (target.getMaxX() < rect.getMinX() - 2
+                    || target.getMinX() > rect.getMaxX() + 2
+                    || target.getMaxY() < rect.getMinY() - 2
+                    || target.getMinY() > rect.getMaxY() + 2) {
                 continue;
             }
-//            System.out.print(target);
-//            System.out.print(" overlaps ");
-//            System.out.println(room);
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
-//    public boolean outOfBound(Position p) {
-//        if (p.x <= 0 || p.x >= width - 1 || p.y <= 0 || p.y >= height - 1) {
-//            return true;
-//        }
-//        return false;
-//    }
-
-//    public Rectangle generateFirst() {
-//        Position firstBase = new Position(random.nextInt(width-2)+1, random.nextInt(height-2)+1);
-//        Position firstEnd = new Position(random.nextInt(width-2)+1, random.nextInt(height-2)+1);
-//        Rectangle firstRec = new Rectangle(firstBase, firstEnd);
-//        rooms.add(firstRec);
-//        return firstRec;
-//    }
-
-    public Rectangle genFirst() {
+    private Room genFirst() {
         Position firstBase = new Position(
                 random.nextInt(width - 2) + 1,
                 random.nextInt(height - 2) + 1);
         Position firstEnd = new Position(
-                Math.min(firstBase.x + random.nextInt(roomWidth),
-                        firstBase.x + random.nextInt(width - 1 - firstBase.x)),
-                Math.min(firstBase.y + random.nextInt(roomHeight),
-                        firstBase.y + random.nextInt(height - 1 - firstBase.y)));
+                Math.min(firstBase.getX() + random.nextInt(rectWidth),
+                        firstBase.getX() + random.nextInt(width - 1 - firstBase.getX())),
+                Math.min(firstBase.getY() + random.nextInt(rectHeight),
+                        firstBase.getY() + random.nextInt(height - 1 - firstBase.getY())));
 
-        Rectangle firstRec = new Rectangle(firstBase, firstEnd);
-        rooms.add(firstRec);
-        return firstRec;
+        Room firstRoom = new Room(firstBase, firstEnd);
+        rects.add(firstRoom);
+        return firstRoom;
     }
 
-//    public ArrayList<Hallway> generateHallways(Rectangle rec) {
-//        // (2)
-//        int attempts = ATTEMPT;
-//        ArrayList<Hallway> halls = new ArrayList<>();
-//
-//        while (attempts > 0 && halls.size() <= 1) {
-//            attempts--;
-//
-//            Position base, end;
-//            Hallway hall;
-//
-//            // up
-//            if (rec.maxY <= height - 3) {
-//                base = new Position(rec.minX+random.nextInt(rec.maxX-rec.minX+1), rec.maxY+1);
-//                end = new Position(base.x, base.y+random.nextInt(height-1-base.y));
-//                hall = new Hallway(base, end, 0);
-//                if (!overlap(hall, rec)) {
-//                    halls.add(hall);
-//                    rooms.add(hall);
-//                }
-//            }
-//
-//            // down
-//            if (rec.minY >= 2) {
-//                base = new Position(rec.minX+random.nextInt(rec.maxX-rec.minX+1), rec.minY-1);
-//                end = new Position(base.x, base.y-random.nextInt(base.y));
-//                hall = new Hallway(base, end, 1);
-//                if (!overlap(hall, rec)) {
-//                    halls.add(hall);
-//                    rooms.add(hall);
-//                }
-//            }
-//
-//            // left
-//            if (rec.minX >= 2) {
-//                base = new Position(rec.minX-1, rec.minY+random.nextInt(rec.maxY-rec.minY+1));
-//                end = new Position(base.x-random.nextInt(base.x), base.y);
-//                hall = new Hallway(base, end, 2);
-//                if (!overlap(hall, rec)) {
-//                    halls.add(hall);
-//                    rooms.add(hall);
-//                }
-//            }
-//
-//            // right
-//            if (rec.maxX <= width - 3) {
-//                base = new Position(rec.maxX+1, rec.minY+random.nextInt(rec.maxY-rec.minY+1));
-//                end = new Position(base.x+random.nextInt(width-1-base.x), base.y);
-//                hall = new Hallway(base, end, 3);
-//                if (!overlap(hall, rec)) {
-//                    halls.add(hall);
-//                    rooms.add(hall);
-//                }
-//            }
-//        }
-//        return halls;
-//    }
-
-    public ArrayList<Hallway> genHallways(Rectangle rec) {
+    private ArrayList<Hallway> genHallways(Room room) {
         // (2)
         int attempts = ATTEMPT;
         ArrayList<Hallway> halls = new ArrayList<>();
+        
+        int minX = room.getMinX();
+        int maxX = room.getMaxX();
+        int minY = room.getMinY();
+        int maxY = room.getMaxY();
 
-        while (attempts > 0 && halls.size() <= 1) {
+        while (attempts > 0 && halls.size() < 1) {
             attempts--;
 
             Position base, end;
             Hallway hall;
 
             // up
-            if (rec.maxY <= height - 3) {
+            if (maxY <= height - 3) {
                 base = new Position(
-                        rec.minX + random.nextInt(rec.maxX - rec.minX + 1),
-                        rec.maxY + 1);
-                end = new Position(base.x,
-                        Math.min(base.y + random.nextInt(roomHeight),
-                                base.y + random.nextInt(height - 1 - base.y)));
+                        minX + random.nextInt(maxX - minX + 1),
+                        maxY + 1);
+                end = new Position(base.getX(),
+                        Math.min(base.getY() + random.nextInt(rectHeight),
+                                base.getY() + random.nextInt(height - 1 - base.getY())));
                 hall = new Hallway(base, end, 0);
-                if (!overlap(hall, rec)) {
+                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                    rooms.add(hall);
                 }
             }
 
             // down
-            if (rec.minY >= 2) {
+            if (minY >= 2) {
                 base = new Position(
-                        rec.minX + random.nextInt(rec.maxX - rec.minX + 1),
-                        rec.minY - 1);
-                end = new Position(base.x,
-                        Math.max(base.y - random.nextInt(roomHeight),
-                                base.y - random.nextInt(base.y)));
+                        minX + random.nextInt(maxX - minX + 1),
+                        minY - 1);
+                end = new Position(base.getX(),
+                        Math.max(base.getY() - random.nextInt(rectHeight),
+                                base.getY() - random.nextInt(base.getY())));
                 hall = new Hallway(base, end, 1);
-                if (!overlap(hall, rec)) {
+                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                    rooms.add(hall);
                 }
             }
 
             // left
-            if (rec.minX >= 2) {
-                base = new Position(rec.minX - 1,
-                        rec.minY + random.nextInt(rec.maxY - rec.minY + 1));
-                end = new Position(Math.max(base.x - random.nextInt(roomWidth),
-                        base.x - random.nextInt(base.x)), base.y);
+            if (minX >= 2) {
+                base = new Position(minX - 1,
+                        minY + random.nextInt(maxY - minY + 1));
+                end = new Position(Math.max(base.getX() - random.nextInt(rectWidth),
+                        base.getX() - random.nextInt(base.getX())), base.getY());
                 hall = new Hallway(base, end, 2);
-                if (!overlap(hall, rec)) {
+                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                    rooms.add(hall);
                 }
             }
 
             // right
-            if (rec.maxX <= width - 3) {
-                base = new Position(rec.maxX + 1,
-                        rec.minY + random.nextInt(rec.maxY - rec.minY + 1));
-                end = new Position(Math.min(base.x + random.nextInt(roomWidth),
-                        base.x + random.nextInt(width - 1 - base.x)), base.y);
+            if (maxX <= width - 3) {
+                base = new Position(maxX + 1,
+                        minY + random.nextInt(maxY - minY + 1));
+                end = new Position(Math.min(base.getX() + random.nextInt(rectWidth),
+                        base.getX() + random.nextInt(width - 1 - base.getX())), base.getY());
                 hall = new Hallway(base, end, 3);
-                if (!overlap(hall, rec)) {
+                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                    rooms.add(hall);
                 }
             }
+
+            rects.addAll(halls);
         }
         return halls;
     }
 
-//    public ArrayList<Rectangle> generateRectangles(ArrayList<Hallway> halls) {
-//        ArrayList<Rectangle> recs = new ArrayList<>();
-//        Position base, end;
-//        Rectangle rec;
-//        for (Hallway hall: halls) {
-//            switch (hall.direction) {
-//                case 0: // up
-//                    if (hall.end.y >= height - 2) {
-//                        continue;
-//                    }
-//                    base = new Position(hall.end.x - random.nextInt(hall.end.x), hall.end.y + 1);
-//                    end = new Position(hall.end.x + random.nextInt(width - 1 - hall.end.x),
-//                            base.y + random.nextInt(height - 1 - base.y));
-//                    break;
-//                case 1: // down
-//                    if (hall.end.y <= 1) {
-//                        continue;
-//                    }
-//                    base = new Position(hall.end.x - random.nextInt(hall.end.x), hall.end.y - 1);
-//                    end = new Position(hall.end.x + random.nextInt(width - 1 - hall.end.x),
-//                            base.y - random.nextInt(base.y));
-//                    break;
-//                case 2: // left
-//                    if (hall.end.x <= 1) {
-//                        continue;
-//                    }
-//                    base = new Position(hall.end.x - 1, hall.end.y - random.nextInt(hall.end.y));
-//                    end = new Position(base.x - random.nextInt(base.x),
-//                            hall.end.y + random.nextInt(height - 1 - hall.end.y));
-//                    break;
-//                case 3: // right
-//                default:
-//                    if (hall.end.x >= width - 2) {
-//                        continue;
-//                    }
-//                    base = new Position(hall.end.x + 1, hall.end.y - random.nextInt(hall.end.y));
-//                    end = new Position(base.x + random.nextInt(width - 1 - base.x),
-//                            hall.end.y + random.nextInt(height - 1 - hall.end.y));
-//            }
-//
-//            rec = new Rectangle(base, end);
-//            if (!overlap(rec, hall)) {
-//                recs.add(rec);
-//                rooms.add(rec);
-//            }
-//        }
-//        return recs;
-//    }
-
-    public ArrayList<Rectangle> genRectangles(ArrayList<Hallway> halls) {
-        ArrayList<Rectangle> recs = new ArrayList<>();
+    private ArrayList<Room> genRooms(ArrayList<Hallway> halls) {
+        ArrayList<Room> rooms = new ArrayList<>();
         Position base, end;
-        Rectangle rec;
+        Room room;
+        
         for (Hallway hall: halls) {
-            switch (hall.direction) {
+            int eX = hall.getEnd().getX();
+            int eY = hall.getEnd().getY();
+            
+            switch (hall.getDirection()) {
                 case 0: // up
-                    if (hall.end.y >= height - 2) {
+                    if (eY >= height - 2) {
                         continue;
                     }
-                    base = new Position(Math.max(hall.end.x - random.nextInt(roomWidth),
-                            hall.end.x - random.nextInt(hall.end.x)), hall.end.y + 1);
-                    end = new Position(Math.min(hall.end.x + random.nextInt(roomWidth),
-                            hall.end.x + random.nextInt(width - 1 - hall.end.x)),
-                            Math.min(base.y + random.nextInt(roomHeight),
-                                    base.y + random.nextInt(height - 1 - base.y)));
+                    base = new Position(Math.max(eX - random.nextInt(rectWidth),
+                            eX - random.nextInt(eX)), eY + 1);
+                    end = new Position(Math.min(eX + random.nextInt(rectWidth),
+                            eX + random.nextInt(width - 1 - eX)),
+                            Math.min(base.getY() + random.nextInt(rectHeight),
+                                    base.getY() + random.nextInt(height - 1 - base.getY())));
                     break;
                 case 1: // down
-                    if (hall.end.y <= 1) {
+                    if (eY <= 1) {
                         continue;
                     }
-                    base = new Position(Math.max(hall.end.x - random.nextInt(roomWidth),
-                            hall.end.x - random.nextInt(hall.end.x)), hall.end.y - 1);
-                    end = new Position(Math.min(hall.end.x + random.nextInt(roomWidth),
-                            hall.end.x + random.nextInt(width - 1 - hall.end.x)),
-                            Math.max(base.y - random.nextInt(roomHeight),
-                                    base.y - random.nextInt(base.y)));
+                    base = new Position(Math.max(eX - random.nextInt(rectWidth),
+                            eX - random.nextInt(eX)), eY - 1);
+                    end = new Position(Math.min(eX + random.nextInt(rectWidth),
+                            eX + random.nextInt(width - 1 - eX)),
+                            Math.max(base.getY() - random.nextInt(rectHeight),
+                                    base.getY() - random.nextInt(base.getY())));
                     break;
                 case 2: // left
-                    if (hall.end.x <= 1) {
+                    if (eX <= 1) {
                         continue;
                     }
-                    base = new Position(hall.end.x - 1,
-                            Math.max(hall.end.y - random.nextInt(roomHeight),
-                                    hall.end.y - random.nextInt(hall.end.y)));
-                    end = new Position(Math.max(base.x - random.nextInt(roomWidth),
-                            base.x - random.nextInt(base.x)),
-                            Math.min(hall.end.y + random.nextInt(roomHeight),
-                                    hall.end.y + random.nextInt(height - 1 - hall.end.y)));
+                    base = new Position(eX - 1,
+                            Math.max(eY - random.nextInt(rectHeight),
+                                    eY - random.nextInt(eY)));
+                    end = new Position(Math.max(base.getX() - random.nextInt(rectWidth),
+                            base.getX() - random.nextInt(base.getX())),
+                            Math.min(eY + random.nextInt(rectHeight),
+                                    eY + random.nextInt(height - 1 - eY)));
                     break;
                 case 3: // right
                 default:
-                    if (hall.end.x >= width - 2) {
+                    if (eX >= width - 2) {
                         continue;
                     }
-                    base = new Position(hall.end.x + 1,
-                            Math.max(hall.end.y - random.nextInt(roomHeight),
-                                    hall.end.y - random.nextInt(hall.end.y)));
-                    end = new Position(Math.min(base.x + random.nextInt(roomWidth),
-                            base.x + random.nextInt(width - 1 - base.x)),
-                            Math.min(hall.end.y + random.nextInt(roomHeight),
-                                    hall.end.y + random.nextInt(height - 1 - hall.end.y)));
+                    base = new Position(eX + 1,
+                            Math.max(eY - random.nextInt(rectHeight),
+                                    eY - random.nextInt(eY)));
+                    end = new Position(Math.min(base.getX() + random.nextInt(rectWidth),
+                            base.getX() + random.nextInt(width - 1 - base.getX())),
+                            Math.min(eY + random.nextInt(rectHeight),
+                                    eY + random.nextInt(height - 1 - eY)));
             }
 
-            rec = new Rectangle(base, end);
-            if (!overlap(rec, hall)) {
-                recs.add(rec);
-                rooms.add(rec);
+            room = new Room(base, end);
+            if (notOverlap(room, hall)) {
+                rooms.add(room);
+                rects.add(room);
             }
         }
-        return recs;
+        return rooms;
     }
 
-    public void genHelper(Rectangle rec) {
+    private void genHelper(Room room) {
         // (2)
 //        System.out.println("Step 2: Generating hallways");
-        ArrayList<Hallway> halls = genHallways(rec);
+        ArrayList<Hallway> halls = genHallways(room);
         // (3)
-//        System.out.println("Step 3: Generating rectangles");
-        ArrayList<Rectangle> recs = genRectangles(halls);
+//        System.out.println("Step 3: Generating rooms");
+        ArrayList<Room> rooms = genRooms(halls);
         // (4)
 //        System.out.println("Step 4: Next loop");
-        for (Rectangle r: recs) {
+        for (Room r: rooms) {
             genHelper(r);
         }
     }
 
-    public void initialize() {
+    private void initialize() {
         for (int x = 0; x < width; x += 1) {
             for (int y = 0; y < height; y += 1) {
-                world[x][y] = nothing;
+                world[x][y] = NOTHING;
             }
         }
     }
 
-    public void genFloor() {
-        for (Room room: rooms) {
-            for (int x = room.minX; x <= room.maxX; x++) {
-                for (int y = room.minY; y <= room.maxY; y++) {
-                    world[x][y] = floor;
-                }
-            }
-        }
-    }
-
-    public void genWall() {
-        for (Room room: rooms) {
-            for (int x = room.minX - 1, y = room.minY - 1; x <= room.maxX + 1; x++) {
-                if (!world[x][y].equals(floor)) {
-                    world[x][y] = wall;
-                }
-            }
-            for (int x = room.minX - 1, y = room.maxY + 1; x <= room.maxX + 1; x++) {
-                if (!world[x][y].equals(floor)) {
-                    world[x][y] = wall;
-                }
-            }
-            for (int x = room.minX - 1, y = room.minY; y <= room.maxY; y++) {
-                if (!world[x][y].equals(floor)) {
-                    world[x][y] = wall;
-                }
-            }
-            for (int x = room.maxX + 1, y = room.minY; y <= room.maxY; y++) {
-                if (!world[x][y].equals(floor)) {
-                    world[x][y] = wall;
+    private void genFloor() {
+        for (Rect rect : rects) {
+            for (int x = rect.getMinX(); x <= rect.getMaxX(); x++) {
+                for (int y = rect.getMinY(); y <= rect.getMaxY(); y++) {
+                    world[x][y] = FLOOR;
                 }
             }
         }
     }
 
-    public void genDoor() {
+    private void genWall() {
+        for (Rect rect : rects) {
+            int minX = rect.getMinX();
+            int maxX = rect.getMaxX();
+            int minY = rect.getMinY();
+            int maxY = rect.getMaxY();
+            
+            for (int x = minX - 1, y = minY - 1; x <= maxX + 1; x++) {
+                if (!world[x][y].equals(FLOOR)) {
+                    world[x][y] = WALL;
+                }
+            }
+            for (int x = minX - 1, y = maxY + 1; x <= maxX + 1; x++) {
+                if (!world[x][y].equals(FLOOR)) {
+                    world[x][y] = WALL;
+                }
+            }
+            for (int x = minX - 1, y = minY; y <= maxY; y++) {
+                if (!world[x][y].equals(FLOOR)) {
+                    world[x][y] = WALL;
+                }
+            }
+            for (int x = maxX + 1, y = minY; y <= maxY; y++) {
+                if (!world[x][y].equals(FLOOR)) {
+                    world[x][y] = WALL;
+                }
+            }
+        }
+    }
+
+    private void genDoor(Room room) {
+        int doorX, doorY;
+        int minX = room.getMinX();
+        int maxX = room.getMaxX();
+        int minY = room.getMinY();
+        int maxY = room.getMaxY();
+        
         while (true) {
-            Room room = rooms.get(random.nextInt(rooms.size()));
-            if (room instanceof Rectangle) {
-                int doorX, doorY;
-                switch (random.nextInt(4)) {
-                    case 0: // up
-                        doorX = room.minX + random.nextInt(room.maxX - room.minX + 1);
-                        doorY = room.maxY + 1;
-                        break;
-                    case 1: // down
-                        doorX = room.minX + random.nextInt(room.maxX - room.minX + 1);
-                        doorY = room.minY - 1;
-                        break;
-                    case 2: // left
-                        doorX = room.minX - 1;
-                        doorY = room.minY + random.nextInt(room.maxY - room.minY + 1);
-                        break;
-                    case 3: // right
-                    default:
-                        doorX = room.maxX + 1;
-                        doorY = room.minY + random.nextInt(room.maxY - room.minY + 1);
-                        break;
-                }
-                if (world[doorX][doorY].equals(wall)) {
-                    world[doorX][doorY] = lockedDoor;
-                    doorPos = new Position(doorX, doorY);
+            switch (random.nextInt(4)) {
+                case 0: // up
+                    doorX = minX + random.nextInt(maxX - minX + 1);
+                    doorY = maxY + 1;
                     break;
-                }
+                case 1: // down
+                    doorX = minX + random.nextInt(maxX - minX + 1);
+                    doorY = minY - 1;
+                    break;
+                case 2: // left
+                    doorX = minX - 1;
+                    doorY = minY + random.nextInt(maxY - minY + 1);
+                    break;
+                case 3: // right
+                default:
+                    doorX = maxX + 1;
+                    doorY = minY + random.nextInt(maxY - minY + 1);
+                    break;
+            }
+            if (world[doorX][doorY].equals(WALL)) {
+                // avoid floor
+                world[doorX][doorY] = LOCKED_DOOR;
+                door = new Door(new Position(doorX, doorY), LOCKED_DOOR, UNLOCKED_DOOR);
+                break;
             }
         }
     }
 
-    public void genBulb() {
-        for (Room room: rooms) {
-            if (room instanceof Rectangle
-                    && (room.maxX - room.minX) > 2
-                    && (room.maxY - room.minY) > 2) {
+    private void genPlayer(Room room) {
+        int playerX, playerY;
+        playerX = room.getMinX()
+                + random.nextInt(room.getMaxX() - room.getMinX() + 1);
+        playerY = room.getMinY()
+                + random.nextInt(room.getMaxY() - room.getMinY() + 1);
+        world[playerX][playerY] = PLAYER;
+        player = new Player(new Position(playerX, playerY), HEALTH, FLOOR, PLAYER, WALL);
+    }
+
+    private void genLightSource() {
+        lightSource = new LightSource(FLOOR, BULB, LIGHTS);
+        for (Rect rect : rects) {
+            int minX = rect.getMinX();
+            int maxX = rect.getMaxX();
+            int minY = rect.getMinY();
+            int maxY = rect.getMaxY();
+            
+            if (rect instanceof Room
+                    && (maxX - minX) > 2 && (maxY - minY) > 2) {
                 int bulbX, bulbY;
-                bulbX = room.minX + random.nextInt(room.maxX - room.minX + 1);
-                bulbY = room.minY + random.nextInt(room.maxY - room.minY + 1);
-                world[bulbX][bulbY] = bulb;
-                lightSource.addBulb(new Position(bulbX, bulbY), room);
+                while (true) {
+                    bulbX = minX + random.nextInt(maxX - minX + 1);
+                    bulbY = minY + random.nextInt(maxY - minY + 1);
+                    if (world[bulbX][bulbY].equals(FLOOR)) {
+                        // avoid player
+                        world[bulbX][bulbY] = BULB;
+                        lightSource.addBulb(new Position(bulbX, bulbY), rect);
+                        break;
+                    }
+                }
+            }
+        }
+        lightSource.initialize();
+    }
+
+    private void genGuard(Room room) {
+        int guardX, guardY;
+        while (true) {
+            guardX = room.getMinX()
+                    + random.nextInt(room.getMaxX() - room.getMinX() + 1);
+            guardY = room.getMinY()
+                    + random.nextInt(room.getMaxY() - room.getMinY() + 1);
+            if (world[guardX][guardY].equals(FLOOR)) {
+                world[guardX][guardY] = GUARD;
+                guard = new Guard(new Position(guardX, guardY), FLOOR, GUARD);
+                break;
             }
         }
     }
 
-    public void genPlayer() {
-        for (Room room: rooms) {
-            if (room instanceof Rectangle) {
-                int playerX, playerY;
-                playerX = room.minX + random.nextInt(room.maxX - room.minX + 1);
-                playerY = room.minY + random.nextInt(room.maxY - room.minY + 1);
-                if (world[playerX][playerY].equals(floor)) {
-                    world[playerX][playerY] = player;
-                    playerPos = new Position(playerX, playerY);
-                    break;
-                }
-            }
-        }
+    private void genShade() {
+        shade = new Shade(width, height, NOTHING);
     }
-
-    public void genGuard() {
-        for (int i = rooms.size() - 1; i >= 0; i--) {
-            Room room = rooms.get(i);
-            if (room instanceof Rectangle) {
-                int guardX, guardY;
-                guardX = room.minX + random.nextInt(room.maxX - room.minX + 1);
-                guardY = room.minY + random.nextInt(room.maxY - room.minY + 1);
-                if (world[guardX][guardY].equals(floor)) {
-                    world[guardX][guardY] = guard;
-                    guardPos = new Position(guardX, guardY);
-                    break;
-                }
-            }
+    
+    private Room getLastRoom() {
+        int i = rects.size() - 1;
+        while (!(rects.get(i) instanceof Room) && i > 0) {
+            i--;
         }
+        return (Room) rects.get(i);
     }
 
     public void generate() {
@@ -631,11 +391,11 @@ public class MapGenerator {
         // floor: 1~width-1 1~height-1
 
         // (1)
-//        System.out.println("Step 1: Generating firstRec");
-        Rectangle firstRec = genFirst();
+//        System.out.println("Step 1: Generating firstRoom");
+        Room firstRoom = genFirst();
 
         // (2)-(4)
-        genHelper(firstRec);
+        genHelper(firstRoom);
 
         // (5)
 //        System.out.println("Step 5: Drawing");
@@ -643,21 +403,27 @@ public class MapGenerator {
         genFloor();
         genWall();
 
+        Room lastRoom = getLastRoom();
+        
         // (6)
 //        System.out.println("Step 6: Adding the door");
-        genDoor();
+        genDoor(lastRoom);
 
         // (7)
-        genBulb();
-//        System.out.println("Step 7: Adding the bulbs");
+//        System.out.println("Step 8: Adding the player");
+        genPlayer(firstRoom);
 
         // (8)
-//        System.out.println("Step 8: Adding the player");
-        genPlayer();
+        genLightSource();
+//        System.out.println("Step 7: Adding the lightSource");
 
         // (9)
 //        System.out.println("Step 9: Adding the guard");
-        genGuard();
+        genGuard(lastRoom);
+
+        // (10)
+//        System.out.println("Step 10: Adding the shade");
+        genShade();
 
 //        System.out.println("Finished");
     }
@@ -665,16 +431,19 @@ public class MapGenerator {
     public TETile[][] getWorld() {
         return world;
     }
-    public Position getDoorPos() {
-        return doorPos;
+    public Door getDoor() {
+        return door;
+    }
+    public Player getPlayer() {
+        return player;
     }
     public LightSource getLightSource() {
         return lightSource;
     }
-    public Position getPlayerPos() {
-        return playerPos;
+    public Guard getGuard() {
+        return guard;
     }
-    public Position getGuardPos() {
-        return guardPos;
+    public Shade getShade() {
+        return shade;
     }
 }

@@ -1,26 +1,21 @@
-package byog.Core;
+package byog.Core.Unit;
 
+import byog.Core.Map.Position;
 import byog.TileEngine.TETile;
 
 import java.io.Serializable;
 
 public class Player implements Serializable {
-
-    Position playerPos;
-    int health;
-    TETile backTile;
-    TETile playerTile, wallTile;
-    Guard guard;
-    Door door;
+    private Position playerPos;
+    private int health;
+    private TETile backTile, playerTile, wallTile;
 
     public Player(Position playerPos, int health, TETile backTile,
-                  TETile playerTile, TETile wallTile, Guard guard, Door door) {
+                  TETile playerTile, TETile wallTile) {
         this.playerPos = playerPos;
         this.health = health;
         this.backTile = backTile;
         this.playerTile = playerTile;
-        this.door = door;
-        this.guard = guard;
         this.wallTile = wallTile;
     }
 
@@ -28,9 +23,21 @@ public class Player implements Serializable {
         return playerPos;
     }
 
-    public void move(TETile[][] world, char c) {
-        int nextX = playerPos.x;
-        int nextY = playerPos.y;
+    public int getHealth() {
+        return health;
+    }
+
+    public TETile getPlayerTile() {
+        return playerTile;
+    }
+
+    public void setBackTile(TETile backTile) {
+        this.backTile = backTile;
+    }
+
+    public void move(TETile[][] world, Door door, Guard guard, char c) {
+        int nextX = playerPos.getX();
+        int nextY = playerPos.getY();
 
         switch (c) {
             case 'w':
@@ -49,26 +56,25 @@ public class Player implements Serializable {
                 return;
         }
 
-        if (world[nextX][nextY].equals(door.doorTile)
+        if (world[nextX][nextY].equals(door.getLockedDoorTile())
                 || world[nextX][nextY].equals(wallTile)) {
             return;
         }
 
-        if (world[nextX][nextY].equals(door.unlockedDoorTile)) {
+        if (world[nextX][nextY].equals(door.getUnlockedDoorTile())) {
 //            System.out.println("YOU WIN");
             return;
         }
 
-        world[playerPos.x][playerPos.y] = backTile;
-        if (world[nextX][nextY].equals(guard.guardTile)) {
-            backTile = guard.backTile;
+        world[playerPos.getX()][playerPos.getY()] = backTile;
+        if (world[nextX][nextY].equals(guard.getGuardTile())) {
+            backTile = guard.getBackTile();
             door.change(world);
         } else {
             backTile = world[nextX][nextY];
         }
         world[nextX][nextY] = playerTile;
 
-        playerPos.x = nextX;
-        playerPos.y = nextY;
+        playerPos = new Position(nextX, nextY);
     }
 }
