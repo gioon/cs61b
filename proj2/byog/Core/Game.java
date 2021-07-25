@@ -279,7 +279,7 @@ public class Game {
                     }
                 }
                 if (gameState == 2) {
-                    drawText("YOU LOSE!");
+                    drawText("GAME OVER!");
                     playKeyboardMenu();
                     continue;
                 }
