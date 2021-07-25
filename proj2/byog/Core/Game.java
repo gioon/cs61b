@@ -82,15 +82,6 @@ public class Game {
         return Long.parseLong(seedStr);
     }
 
-    private void drawText(String s) {
-        StdDraw.clear(Color.BLACK);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-        StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s);
-        StdDraw.show();
-        StdDraw.pause(1000);
-    }
-
     private void newGame() {
         setWidthAndHeight();
 
@@ -168,6 +159,15 @@ public class Game {
                 return;
             default:
         }
+    }
+
+    private void drawText(String s) {
+        StdDraw.clear(Color.BLACK);
+        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
+        StdDraw.setFont(font);
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s);
+        StdDraw.show();
+        StdDraw.pause(1000);
     }
 
     private void drawGame() {
@@ -265,6 +265,7 @@ public class Game {
                         }
                     }
                 }
+
                 playGame(c);
                 if (gameState == 1) {
                     if (round == ROUND) {
@@ -283,6 +284,7 @@ public class Game {
                     continue;
                 }
             }
+
             StdDraw.pause(10);
             if (shade.isOpen()) {
                 ter.renderFrame(shade.getShade(world, player));
@@ -305,11 +307,11 @@ public class Game {
                 String seedStr = "";
                 i++;
                 while (i < chars.length) {
+                    if (chars[i] == 's') {
+                        break;
+                    }
                     if (Character.isDigit(chars[i])) {
                         seedStr += chars[i];
-                    } else if (chars[i] == 's') {
-                        i++;
-                        break;
                     }
                     i++;
                 }
@@ -321,6 +323,7 @@ public class Game {
                 throw new RuntimeException("Please enter the input string correctly!");
         }
 
+        i++;
         return i;
     }
 
@@ -358,6 +361,7 @@ public class Game {
                     break;
                 }
             }
+
             playGame(chars[i]);
             if (gameState == 1) {
                 if (round == ROUND) {
@@ -372,6 +376,7 @@ public class Game {
                 i = playInputStringMenu(chars, i);
                 continue;
             }
+
             i++;
         }
 
