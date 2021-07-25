@@ -11,6 +11,7 @@ import java.io.Serializable;
 import java.util.Random;
 
 public class Saving implements Serializable {
+    private int round;
     private Random random;
     private TETile[][] world;
     private Door door;
@@ -18,6 +19,10 @@ public class Saving implements Serializable {
     private LightSource lightSource;
     private Guard guard;
     private Shade shade;
+
+    public void setRound(int round) {
+        this.round = round;
+    }
 
     public void setRandom(Random random) {
         this.random = random;
@@ -45,6 +50,10 @@ public class Saving implements Serializable {
 
     public void setShade(Shade shade) {
         this.shade = shade;
+    }
+
+    public int getRound() {
+        return round;
     }
 
     public Random getRandom() {

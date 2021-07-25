@@ -35,7 +35,7 @@ public class Player implements Serializable {
         this.backTile = backTile;
     }
 
-    public void move(TETile[][] world, Door door, Guard guard, char c) {
+    public int move(TETile[][] world, Door door, Guard guard, char c) {
         int nextX = playerPos.getX();
         int nextY = playerPos.getY();
 
@@ -53,17 +53,16 @@ public class Player implements Serializable {
                 nextX++;
                 break;
             default:
-                return;
+                return 0;
         }
 
         if (world[nextX][nextY].equals(door.getLockedDoorTile())
                 || world[nextX][nextY].equals(wallTile)) {
-            return;
+            return 0;
         }
 
         if (world[nextX][nextY].equals(door.getUnlockedDoorTile())) {
-//            System.out.println("YOU WIN");
-            return;
+            return 1;
         }
 
         world[playerPos.getX()][playerPos.getY()] = backTile;
@@ -76,5 +75,6 @@ public class Player implements Serializable {
         world[nextX][nextY] = playerTile;
 
         playerPos = new Position(nextX, nextY);
+        return 0;
     }
 }

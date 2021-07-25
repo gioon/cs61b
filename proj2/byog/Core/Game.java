@@ -30,13 +30,13 @@ public class Game {
     private static final int FONT_SIZE = Parameters.FONT_SIZE;
     private static final int ROUND = Parameters.ROUND;
 
-    private int width = MAX_WIDTH - (ROUND - 1) * INC_WIDTH;
-    private int height = MAX_HEIGHT - (ROUND - 1) * INC_HEIGHT;
-    private int rOff = (C_WIDTH - width) / 2; // right offset
-    private int uOff = (C_HEIGHT - height) / 2; // up offset
-    private int lOff = C_WIDTH - width - rOff; // left offset - xOffset
-    private int dOff = C_HEIGHT - height - uOff; // down offset - yOffset
+    private static final int LEFT_OFF = (C_WIDTH - MAX_WIDTH) / 2; // left offset - xOffset
+    private static final int DOWN_OFF = (C_HEIGHT - MAX_HEIGHT) / 2; // down offset - yOffset
     // canvas的width和height包含offset和map的Width和height否则界面显示不全
+
+    private int width;
+    private int height;
+    private int gameState;
 
     private int round;
     private Random random;
@@ -47,14 +47,10 @@ public class Game {
     private Guard guard;
     private Shade shade;
 
-    private void changeWidthAndHeight() {
-        if (width + INC_WIDTH <= MAX_WIDTH && height + INC_HEIGHT <= MAX_HEIGHT) {
-            width += INC_WIDTH;
-            height += INC_HEIGHT;
-            rOff = (C_WIDTH - width) / 2;
-            uOff = (C_HEIGHT - height) / 2;
-            lOff = C_WIDTH - width - rOff;
-            dOff = C_HEIGHT - height - uOff;
+    private void setWidthAndHeight() {
+        if (round > 0) {
+            width = MAX_WIDTH - (ROUND - round) * INC_WIDTH;
+            height = MAX_HEIGHT - (ROUND - round) * INC_HEIGHT;
         }
     }
 
@@ -64,8 +60,6 @@ public class Game {
         StdDraw.setFont(font);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75,
                 "Please enter a random seed (S to stop)");
-        font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-        StdDraw.setFont(font);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s + "_");
         StdDraw.show();
     }
@@ -88,7 +82,18 @@ public class Game {
         return Long.parseLong(seedStr);
     }
 
+    private void drawText(String s) {
+        StdDraw.clear(Color.BLACK);
+        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
+        StdDraw.setFont(font);
+        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s);
+        StdDraw.show();
+        StdDraw.pause(1000);
+    }
+
     private void newGame() {
+        setWidthAndHeight();
+
         MapGenerator mg = new MapGenerator(width, height, random);
         mg.generate();
         world = mg.getWorld();
@@ -112,6 +117,9 @@ public class Game {
             System.exit(0); // 没有存档会直接退出
         }
 
+        round = saving.getRound();
+        setWidthAndHeight();
+
         random = saving.getRandom();
         world = saving.getWorld();
         door = saving.getDoor();
@@ -123,6 +131,7 @@ public class Game {
 
     private void saveGame() {
         Saving saving = new Saving();
+        saving.setRound(round);
         saving.setRandom(random);
         saving.setWorld(world);
         saving.setDoor(door);
@@ -148,7 +157,8 @@ public class Game {
             case 'a':
             case 's':
             case 'd':
-                player.move(world, door, guard, c);
+                gameState = player.move(world, door, guard, c);
+                // 0: nothing 1: win / new game 2: lose
                 return;
             case '1':
                 shade.change();
@@ -160,6 +170,12 @@ public class Game {
         }
     }
 
+    private void drawGame() {
+        drawText("ROUND " + round);
+        ter.renderFrame(world);
+        drawHUD();
+    }
+
     private void drawHUD() {
         StdDraw.setPenColor(Color.WHITE);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
@@ -169,10 +185,10 @@ public class Game {
 
         double mx = StdDraw.mouseX();
         double my = StdDraw.mouseY();
-        if (mx > lOff && mx < lOff + width
-                && my > dOff && my < dOff + height) {
-            int wx = (int) (mx - lOff);
-            int wy = (int) (my - dOff);
+        if (mx > LEFT_OFF && mx < LEFT_OFF + width
+                && my > DOWN_OFF && my < DOWN_OFF + height) {
+            int wx = (int) (mx - LEFT_OFF);
+            int wy = (int) (my - DOWN_OFF);
             StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.9,
                     "You see " + world[wx][wy].description() + ".");
         }
@@ -181,7 +197,6 @@ public class Game {
     }
 
     private void drawMenu() {
-        ter.initialize(C_WIDTH, C_HEIGHT, lOff, dOff);
         StdDraw.clear(Color.BLACK);
         StdDraw.setPenColor(Color.WHITE);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
@@ -195,10 +210,7 @@ public class Game {
         StdDraw.show();
     }
 
-    /**
-     * Method used for playing a fresh game. The game should start from the main menu.
-     */
-    public void playWithKeyboard() {
+    private void playKeyboardMenu() {
         drawMenu();
 
         char c;
@@ -217,16 +229,29 @@ public class Game {
             loadGame();
         }
         if (c == 'n') {
+            round = 1;
             random = new Random(enterRandomSeed());
             newGame();
         }
 
-        ter.renderFrame(world);
-        drawHUD();
+        drawGame();
+    }
 
+    /**
+     * Method used for playing a fresh game. The game should start from the main menu.
+     */
+    public void playWithKeyboard() {
+        ter.initialize(C_WIDTH, C_HEIGHT, LEFT_OFF, DOWN_OFF);
+        playKeyboardMenu();
+
+        char c;
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 c = Character.toLowerCase(StdDraw.nextKeyTyped());
+                if (c == 'm') {
+                    playKeyboardMenu();
+                    continue;
+                }
                 if (c == ':') {
                     while (true) {
                         if (StdDraw.hasNextKeyTyped()) {
@@ -241,6 +266,22 @@ public class Game {
                     }
                 }
                 playGame(c);
+                if (gameState == 1) {
+                    if (round == ROUND) {
+                        drawText("YOU WIN!");
+                        playKeyboardMenu();
+                        continue;
+                    } else {
+                        round++;
+                        newGame();
+                        drawGame();
+                    }
+                }
+                if (gameState == 2) {
+                    drawText("YOU LOSE!");
+                    playKeyboardMenu();
+                    continue;
+                }
             }
             StdDraw.pause(10);
             if (shade.isOpen()) {
@@ -250,6 +291,37 @@ public class Game {
             }
             drawHUD();
         }
+    }
+
+    private int playInputStringMenu(char[] chars, int i) {
+        switch (chars[i]) {
+            case 'q':
+                System.exit(0);
+                break;
+            case 'l':
+                loadGame();
+                break;
+            case 'n':
+                String seedStr = "";
+                i++;
+                while (i < chars.length) {
+                    if (Character.isDigit(chars[i])) {
+                        seedStr += chars[i];
+                    } else if (chars[i] == 's') {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                round = 1;
+                random = new Random(Long.parseLong(seedStr));
+                newGame();
+                break;
+            default:
+                throw new RuntimeException("Please enter the input string correctly!");
+        }
+
+        return i;
     }
 
     /**
@@ -268,37 +340,15 @@ public class Game {
         // Fill out this method to run the game using the input passed in,
         // and return a 2D tile representation of the world that would have been
         // drawn if the same inputs had been given to playWithKeyboard().
-
         String inputLower = input.toLowerCase();
         char[] chars = inputLower.toCharArray();
-
-        int i = 1;
-        switch (chars[0]) {
-            case 'q':
-                System.exit(0);
-                break;
-            case 'l':
-                loadGame();
-                break;
-            case 'n':
-                String seedStr = "";
-                while (i < chars.length) {
-                    if (Character.isDigit(chars[i])) {
-                        seedStr += chars[i];
-                    } else if (chars[i] == 's') {
-                        i++;
-                        break;
-                    }
-                    i++;
-                }
-                random = new Random(Long.parseLong(seedStr));
-                newGame();
-                break;
-            default:
-                throw new RuntimeException("Please enter the input string correctly!");
-        }
+        int i = playInputStringMenu(chars, 0);
 
         while (i < chars.length) {
+            if (chars[i] == 'm') {
+                i = playInputStringMenu(chars, i);
+                continue;
+            }
             if (chars[i] == ':') {
                 if (i + 1 > chars.length) {
                     break;
@@ -307,10 +357,21 @@ public class Game {
                     saveGame();
                     break;
                 }
-                i++;
             }
-
             playGame(chars[i]);
+            if (gameState == 1) {
+                if (round == ROUND) {
+                    i = playInputStringMenu(chars, i);
+                    continue;
+                } else {
+                    round++;
+                    newGame();
+                }
+            }
+            if (gameState == 2) {
+                i = playInputStringMenu(chars, i);
+                continue;
+            }
             i++;
         }
 
