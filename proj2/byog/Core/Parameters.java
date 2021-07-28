@@ -9,16 +9,16 @@ public class Parameters {
     public static final int C_HEIGHT = 45; // canvas height
     public static final int FONT_SIZE = 16;
 
-    public static final int MAX_WIDTH = 60; // map max width
-    public static final int MAX_HEIGHT = 35; // map max height
-    public static final int INC_WIDTH = 10; // increase width per round
-    public static final int INC_HEIGHT = 5; // increase height per round
-    public static final int ROUND = 3;
-//    public static final int MAX_WIDTH = 50; // map max width
-//    public static final int MAX_HEIGHT = 20; // map max height
+//    public static final int MAX_WIDTH = 60; // map max width
+//    public static final int MAX_HEIGHT = 35; // map max height
 //    public static final int INC_WIDTH = 10; // increase width per round
 //    public static final int INC_HEIGHT = 5; // increase height per round
 //    public static final int ROUND = 3;
+    public static final int MAX_WIDTH = 50; // map max width
+    public static final int MAX_HEIGHT = 20; // map max height
+    public static final int INC_WIDTH = 10; // increase width per round
+    public static final int INC_HEIGHT = 5; // increase height per round
+    public static final int ROUND = 3;
 
     public static final TETile NOTHING = Tileset.NOTHING;
     public static final TETile FLOOR = Tileset.FLOOR;

@@ -232,7 +232,7 @@ public class Game {
         StdDraw.show();
     }
 
-    private void playKeyboardMenu() {
+    private void playWithKeyboardMenu() {
         drawMenu();
 
         char c;
@@ -264,19 +264,19 @@ public class Game {
      */
     public void playWithKeyboard() {
         ter.initialize(C_WIDTH, C_HEIGHT, LEFT_OFF, DOWN_OFF);
-        playKeyboardMenu();
+        playWithKeyboardMenu();
 
         char c;
         while (true) {
             if (StdDraw.hasNextKeyTyped()) {
                 c = Character.toLowerCase(StdDraw.nextKeyTyped());
                 if (c == 'm') {
-                    playKeyboardMenu();
+                    playWithKeyboardMenu();
                     continue;
                 }
                 if (c == 'b') {
                     saveGame();
-                    playKeyboardMenu();
+                    playWithKeyboardMenu();
                     continue;
                 }
                 if (c == ':') {
@@ -298,8 +298,9 @@ public class Game {
                     gameState = 0;
                     if (round == ROUND) {
                         drawText("YOU WIN!");
-                        playKeyboardMenu();
-                        continue;
+                        round = 1;
+                        newGame();
+                        drawGame();
                     } else {
                         round++;
                         newGame();
@@ -309,8 +310,8 @@ public class Game {
                 if (gameState == 2) {
                     gameState = 0;
                     drawText("GAME OVER!");
-                    playKeyboardMenu();
-                    continue;
+                    newGame();
+                    drawGame();
                 }
             }
 
@@ -324,7 +325,7 @@ public class Game {
         }
     }
 
-    private int playInputStringMenu(char[] chars, int i) {
+    private int playWithInputStringMenu(char[] chars, int i) {
         switch (chars[i]) {
             case 'q':
                 System.exit(0);
@@ -349,7 +350,8 @@ public class Game {
                 newGame();
                 break;
             default:
-                throw new RuntimeException("Please enter the input string correctly!" + Arrays.toString(chars) + i);
+                throw new RuntimeException("Please enter the input string correctly!"
+                        + Arrays.toString(chars) + " " + chars[i] + " " + i);
         }
 
         i++;
@@ -374,16 +376,16 @@ public class Game {
         // drawn if the same inputs had been given to playWithKeyboard().
         String inputLower = input.toLowerCase();
         char[] chars = inputLower.toCharArray();
-        int i = playInputStringMenu(chars, 0);
+        int i = playWithInputStringMenu(chars, 0);
 
         while (i < chars.length) {
             if (chars[i] == 'm') {
-                i = playInputStringMenu(chars, i + 1);
+                i = playWithInputStringMenu(chars, i + 1);
                 continue;
             }
             if (chars[i] == 'b') {
                 saveGame();
-                i = playInputStringMenu(chars, i + 1);
+                i = playWithInputStringMenu(chars, i + 1);
                 continue;
             }
             if (chars[i] == ':') {
@@ -400,8 +402,8 @@ public class Game {
             if (gameState == 1) {
                 gameState = 0;
                 if (round == ROUND) {
-                    i = playInputStringMenu(chars, i + 1);
-                    continue;
+                    round = 1;
+                    newGame();
                 } else {
                     round++;
                     newGame();
@@ -409,8 +411,7 @@ public class Game {
             }
             if (gameState == 2) {
                 gameState = 0;
-                i = playInputStringMenu(chars, i + 1);
-                continue;
+                newGame();
             }
             i++;
         }
