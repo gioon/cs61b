@@ -18,6 +18,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Arrays;
 import java.util.Random;
 
 public class Game {
@@ -348,7 +349,7 @@ public class Game {
                 newGame();
                 break;
             default:
-                throw new RuntimeException("Please enter the input string correctly!");
+                throw new RuntimeException("Please enter the input string correctly!" + Arrays.toString(chars) + i);
         }
 
         i++;
