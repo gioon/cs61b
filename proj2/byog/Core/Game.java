@@ -3,8 +3,10 @@ package byog.Core;
 import byog.Core.Feature.LightSource;
 import byog.Core.Feature.Shade;
 import byog.Core.Unit.Door;
+import byog.Core.Unit.Flower;
 import byog.Core.Unit.Guard;
 import byog.Core.Unit.Player;
+import byog.Core.Unit.Portal;
 import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
 import edu.princeton.cs.introcs.StdDraw;
@@ -23,11 +25,12 @@ public class Game {
 
     private static final int C_WIDTH = Parameters.C_WIDTH;
     private static final int C_HEIGHT = Parameters.C_HEIGHT;
+    private static final int FONT_SIZE = Parameters.FONT_SIZE;
+
     private static final int MAX_WIDTH = Parameters.MAX_WIDTH;
     private static final int MAX_HEIGHT = Parameters.MAX_HEIGHT;
     private static final int INC_WIDTH = Parameters.INC_WIDTH;
     private static final int INC_HEIGHT = Parameters.INC_HEIGHT;
-    private static final int FONT_SIZE = Parameters.FONT_SIZE;
     private static final int ROUND = Parameters.ROUND;
 
     private static final int LEFT_OFF = (C_WIDTH - MAX_WIDTH) / 2; // left offset - xOffset
@@ -45,6 +48,8 @@ public class Game {
     private Player player;
     private LightSource lightSource;
     private Guard guard;
+    private Flower flower;
+    private Portal portal;
     private Shade shade;
 
     private void setWidthAndHeight() {
@@ -92,6 +97,8 @@ public class Game {
         player = mg.getPlayer();
         lightSource = mg.getLightSource();
         guard = mg.getGuard();
+        flower = mg.getFlower();
+        portal = mg.getPortal();
         shade = mg.getShade();
     }
 
@@ -117,6 +124,8 @@ public class Game {
         player = saving.getPlayer();
         lightSource = saving.getLightSource();
         guard = saving.getGuard();
+        flower = saving.getFlower();
+        portal = saving.getPortal();
         shade = saving.getShade();
     }
 
@@ -129,6 +138,8 @@ public class Game {
         saving.setPlayer(player);
         saving.setLightSource(lightSource);
         saving.setGuard(guard);
+        saving.setFlower(flower);
+        saving.setPortal(portal);
         saving.setShade(shade);
 
         try {
@@ -148,14 +159,20 @@ public class Game {
             case 'a':
             case 's':
             case 'd':
-                gameState = player.move(world, door, guard, c);
+                gameState = player.move(world, c);
                 // 0: nothing 1: win / new game 2: lose
                 return;
             case '1':
                 shade.change();
                 return;
             case '2':
-                lightSource.change(world, player, guard);
+                lightSource.change(world);
+                return;
+            case 'f':
+                player.changeSpeed();
+                return;
+            case 'g':
+                portal.setPortal(world);
                 return;
             default:
         }
@@ -167,7 +184,7 @@ public class Game {
         StdDraw.setFont(font);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s);
         StdDraw.show();
-        StdDraw.pause(1000);
+        StdDraw.pause(500);
     }
 
     private void drawGame() {
@@ -180,8 +197,12 @@ public class Game {
         StdDraw.setPenColor(Color.WHITE);
         Font font = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
         StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.2, C_HEIGHT * 0.9,
-                "❤ x " + player.getHealth());
+        StdDraw.text(C_WIDTH * 0.2, C_HEIGHT * 0.92,
+                "❤ - " + player.getHealth()
+                + "     ⛸ - " + player.getStepNum()
+                + " - " + player.getShield()
+                + "     ✿ - " + player.getPower()
+                + " - " + player.getSpeed());
 
         double mx = StdDraw.mouseX();
         double my = StdDraw.mouseY();
@@ -189,7 +210,7 @@ public class Game {
                 && my > DOWN_OFF && my < DOWN_OFF + height) {
             int wx = (int) (mx - LEFT_OFF);
             int wy = (int) (my - DOWN_OFF);
-            StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.9,
+            StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.92,
                     "You see " + world[wx][wy].description() + ".");
         }
 
@@ -252,6 +273,11 @@ public class Game {
                     playKeyboardMenu();
                     continue;
                 }
+                if (c == 'b') {
+                    saveGame();
+                    playKeyboardMenu();
+                    continue;
+                }
                 if (c == ':') {
                     while (true) {
                         if (StdDraw.hasNextKeyTyped()) {
@@ -268,6 +294,7 @@ public class Game {
 
                 playGame(c);
                 if (gameState == 1) {
+                    gameState = 0;
                     if (round == ROUND) {
                         drawText("YOU WIN!");
                         playKeyboardMenu();
@@ -279,6 +306,7 @@ public class Game {
                     }
                 }
                 if (gameState == 2) {
+                    gameState = 0;
                     drawText("GAME OVER!");
                     playKeyboardMenu();
                     continue;
@@ -349,7 +377,12 @@ public class Game {
 
         while (i < chars.length) {
             if (chars[i] == 'm') {
-                i = playInputStringMenu(chars, i);
+                i = playInputStringMenu(chars, i + 1);
+                continue;
+            }
+            if (chars[i] == 'b') {
+                saveGame();
+                i = playInputStringMenu(chars, i + 1);
                 continue;
             }
             if (chars[i] == ':') {
@@ -364,8 +397,9 @@ public class Game {
 
             playGame(chars[i]);
             if (gameState == 1) {
+                gameState = 0;
                 if (round == ROUND) {
-                    i = playInputStringMenu(chars, i);
+                    i = playInputStringMenu(chars, i + 1);
                     continue;
                 } else {
                     round++;
@@ -373,13 +407,16 @@ public class Game {
                 }
             }
             if (gameState == 2) {
-                i = playInputStringMenu(chars, i);
+                gameState = 0;
+                i = playInputStringMenu(chars, i + 1);
                 continue;
             }
-
             i++;
         }
 
+        if (shade.isOpen()) {
+            return shade.getShade(world, player);
+        }
         return world;
     }
 }

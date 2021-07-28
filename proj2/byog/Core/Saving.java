@@ -3,8 +3,10 @@ package byog.Core;
 import byog.Core.Feature.LightSource;
 import byog.Core.Feature.Shade;
 import byog.Core.Unit.Door;
+import byog.Core.Unit.Flower;
 import byog.Core.Unit.Guard;
 import byog.Core.Unit.Player;
+import byog.Core.Unit.Portal;
 import byog.TileEngine.TETile;
 
 import java.io.Serializable;
@@ -18,6 +20,8 @@ public class Saving implements Serializable {
     private Player player;
     private LightSource lightSource;
     private Guard guard;
+    private Flower flower;
+    private Portal portal;
     private Shade shade;
 
     public void setRound(int round) {
@@ -46,6 +50,14 @@ public class Saving implements Serializable {
 
     public void setGuard(Guard guard) {
         this.guard = guard;
+    }
+
+    public void setFlower(Flower flower) {
+        this.flower = flower;
+    }
+
+    public void setPortal(Portal portal) {
+        this.portal = portal;
     }
 
     public void setShade(Shade shade) {
@@ -78,6 +90,14 @@ public class Saving implements Serializable {
 
     public Guard getGuard() {
         return guard;
+    }
+
+    public Flower getFlower() {
+        return flower;
+    }
+
+    public Portal getPortal() {
+        return portal;
     }
 
     public Shade getShade() {
