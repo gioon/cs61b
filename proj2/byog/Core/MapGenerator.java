@@ -3,14 +3,15 @@ package byog.Core;
 import byog.Core.Feature.LightSource;
 import byog.Core.Feature.Shade;
 import byog.Core.Map.Hallway;
+import byog.Core.Map.Position;
 import byog.Core.Map.Rect;
 import byog.Core.Map.Room;
+import byog.Core.Map.World;
 import byog.Core.Unit.Door;
 import byog.Core.Unit.Flower;
 import byog.Core.Unit.Guard;
 import byog.Core.Unit.Player;
 import byog.Core.Unit.Portal;
-import byog.Core.Map.Position;
 import byog.TileEngine.TETile;
 
 import java.util.ArrayList;
@@ -43,8 +44,9 @@ public class MapGenerator {
     private final int rectWidth;
     private final int rectHeight;
 
+    private boolean hardMode;
     private Random random;
-    private TETile[][] world;
+    private World world;
     private Door door;
     private Player player;
     private LightSource lightSource;
@@ -55,14 +57,15 @@ public class MapGenerator {
 
     private ArrayList<Rect> rects;
 
-    public MapGenerator(int width, int height, Random random) {
+    public MapGenerator(int width, int height, Random random, boolean hardMode) {
         this.width = width;
         this.height = height;
         this.rectWidth = Math.min(width - 2, width / 5);
         this.rectHeight = Math.min(height - 2, height / 3);
 
+        this.hardMode = hardMode;
         this.random = random;
-        this.world = new TETile[width][height];
+        this.world = new World(width, height);
 
         this.rects = new ArrayList<>();
     }
@@ -255,7 +258,7 @@ public class MapGenerator {
     private void initialize() {
         for (int x = 0; x < width; x += 1) {
             for (int y = 0; y < height; y += 1) {
-                world[x][y] = NOTHING;
+                world.set(x, y, NOTHING);
             }
         }
     }
@@ -264,18 +267,18 @@ public class MapGenerator {
         for (Rect rect: rects) {
             for (int x = rect.getMinX(); x <= rect.getMaxX(); x++) {
                 for (int y = rect.getMinY(); y <= rect.getMaxY(); y++) {
-                    world[x][y] = FLOOR;
+                    world.set(x, y, FLOOR);
                 }
             }
         }
     }
 
     private void genWallAndNailHelper(int x, int y) {
-        if (!world[x][y].equals(FLOOR)) {
+        if (!world.get(x, y).equals(FLOOR)) {
             if (random.nextInt(101) <= NAIL_PROB) {
-                world[x][y] = NAIL;
+                world.set(x, y, NAIL);
             } else {
-                world[x][y] = WALL;
+                world.set(x, y, WALL);
             }
         }
     }
@@ -329,10 +332,9 @@ public class MapGenerator {
                     doorY = minY + random.nextInt(maxY - minY + 1);
                     break;
             }
-            if (world[doorX][doorY].equals(WALL)) {
-                // avoid floor
-                world[doorX][doorY] = LOCKED_DOOR;
-                door = new Door(new Position(doorX, doorY), LOCKED_DOOR, UNLOCKED_DOOR);
+            if (world.get(doorX, doorY).equals(WALL)) {
+                world.set(doorX, doorY, LOCKED_DOOR);
+                door = new Door(new Position(doorX, doorY), UNLOCKED_DOOR);
                 break;
             }
         }
@@ -344,8 +346,9 @@ public class MapGenerator {
                 + random.nextInt(room.getMaxX() - room.getMinX() + 1);
         playerY = room.getMinY()
                 + random.nextInt(room.getMaxY() - room.getMinY() + 1);
-        world[playerX][playerY] = PLAYER;
-        player = new Player(new Position(playerX, playerY), FLOOR, PLAYER, WALL, NAIL);
+        Position p = new Position(playerX, playerY);
+        world.set(p, PLAYER);
+        player = new Player(p, FLOOR, PLAYER, WALL, NAIL, hardMode);
         player.setAttribute(HEALTH, SHIELD_THRESH, POWER_AWARD, SPEED_UP);
     }
 
@@ -364,9 +367,10 @@ public class MapGenerator {
                 while (true) {
                     bulbX = minX + random.nextInt(maxX - minX + 1);
                     bulbY = minY + random.nextInt(maxY - minY + 1);
-                    if (world[bulbX][bulbY].equals(FLOOR)) {
-                        world[bulbX][bulbY] = BULB;
-                        lightSource.addBulb(new Position(bulbX, bulbY), rect);
+                    Position p = new Position(bulbX, bulbY);
+                    if (world.get(p).equals(FLOOR)) {
+                        world.set(p, BULB);
+                        lightSource.addBulb(p, rect);
                         break;
                     }
                 }
@@ -376,7 +380,7 @@ public class MapGenerator {
     }
 
     private void genGuard() {
-        guard = new Guard(FLOOR, GUARD);
+        guard = new Guard(FLOOR);
         for (Rect rect: rects) {
             int minX = rect.getMinX();
             int maxX = rect.getMaxX();
@@ -389,9 +393,10 @@ public class MapGenerator {
                 while (true) {
                     guardX = minX + random.nextInt(maxX - minX + 1);
                     guardY = minY + random.nextInt(maxY - minY + 1);
-                    if (world[guardX][guardY].equals(FLOOR)) {
-                        world[guardX][guardY] = GUARD;
-                        guard.addGuard(new Position(guardX, guardY));
+                    Position p = new Position(guardX, guardY);
+                    if (world.get(p).equals(FLOOR)) {
+                        world.set(p, GUARD);
+                        guard.addGuard(p);
                         break;
                     }
                 }
@@ -400,7 +405,7 @@ public class MapGenerator {
     }
 
     private void genFlower() {
-        flower = new Flower(FLOOR, FLOWER);
+        flower = new Flower(FLOOR);
         for (Rect rect: rects) {
             int minX = rect.getMinX();
             int maxX = rect.getMaxX();
@@ -413,18 +418,15 @@ public class MapGenerator {
                 while (true) {
                     flowerX = minX + random.nextInt(maxX - minX + 1);
                     flowerY = minY + random.nextInt(maxY - minY + 1);
-                    if (world[flowerX][flowerY].equals(FLOOR)) {
-                        world[flowerX][flowerY] = FLOWER;
-                        flower.addFlower(new Position(flowerX, flowerY));
+                    Position p = new Position(flowerX, flowerY);
+                    if (world.get(p).equals(FLOOR)) {
+                        world.set(p, FLOWER);
+                        flower.addFlower(p);
                         break;
                     }
                 }
             }
         }
-    }
-
-    private void genShade() {
-        shade = new Shade(width, height, NOTHING);
     }
     
     private Room getLastRoom() {
@@ -468,18 +470,17 @@ public class MapGenerator {
         genGuard();
         genFlower();
 
-        portal = new Portal(PORTAL, player);
-        player.setUnit(door, guard, flower, portal);
-        lightSource.setUnit(player, guard, flower, portal);
-
         // (9)
-//        System.out.println("Step 9: Adding the shade");
-        genShade();
+//        System.out.println("Step 9: Adding the portal and shade");
+        portal = new Portal(PORTAL, player);
+        shade = new Shade(width, height, NOTHING, player, lightSource, hardMode);
+        player.setUnit(door, lightSource, guard, flower, portal, shade);
+        lightSource.setUnit(player, guard, flower, portal);
 
 //        System.out.println("Finished");
     }
 
-    public TETile[][] getWorld() {
+    public World getWorld() {
         return world;
     }
     public Door getDoor() {

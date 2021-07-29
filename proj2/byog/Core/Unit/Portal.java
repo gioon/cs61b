@@ -1,6 +1,7 @@
 package byog.Core.Unit;
 
 import byog.Core.Map.Position;
+import byog.Core.Map.World;
 import byog.TileEngine.TETile;
 
 import java.io.Serializable;
@@ -20,7 +21,7 @@ public class Portal implements Serializable {
         this.state = 0;
     }
 
-    public void setPortal(TETile[][] world) {
+    public void setPortal(World world) {
         if (state == 0) {
             p1 = player.getPlayerPos();
             backTile1 = player.getBackTile();
@@ -37,13 +38,13 @@ public class Portal implements Serializable {
         } else {
             if (player.getPlayerPos().equals(p1)) {
                 player.setBackTile(backTile1);
-                world[p2.getX()][p2.getY()] = backTile2;
+                world.set(p2, backTile2);
             } else if (player.getPlayerPos().equals(p2)) {
                 player.setBackTile(backTile2);
-                world[p1.getX()][p1.getY()] = backTile1;
+                world.set(p1, backTile1);
             } else {
-                world[p1.getX()][p1.getY()] = backTile1;
-                world[p2.getX()][p2.getY()] = backTile2;
+                world.set(p1, backTile1);
+                world.set(p2, backTile2);
             }
             p1 = null;
             p2 = null;
@@ -59,14 +60,6 @@ public class Portal implements Serializable {
 
     public void setBackTile2(TETile backTile2) {
         this.backTile2 = backTile2;
-    }
-
-    public TETile getBackTile1() {
-        return backTile1;
-    }
-
-    public TETile getBackTile2() {
-        return backTile2;
     }
 
     public Position getPortal1() {

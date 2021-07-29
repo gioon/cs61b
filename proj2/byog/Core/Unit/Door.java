@@ -1,33 +1,32 @@
 package byog.Core.Unit;
 
 import byog.Core.Map.Position;
+import byog.Core.Map.World;
 import byog.TileEngine.TETile;
 
 import java.io.Serializable;
 
 public class Door implements Serializable {
     private Position doorPos;
-    private TETile lockedDoorTile, unlockedDoorTile;
+    private TETile unlockedDoorTile;
 
-    public Door(Position doorPos, TETile lockedDoorTile, TETile unlockedDoorTile) {
+    private boolean opened = false;
+
+    public Door(Position doorPos, TETile unlockedDoorTile) {
         this.doorPos = doorPos;
-        this.lockedDoorTile = lockedDoorTile;
         this.unlockedDoorTile = unlockedDoorTile;
     }
 
-    public void change(TETile[][] world) {
-        world[doorPos.getX()][doorPos.getY()] = unlockedDoorTile;
+    public boolean isOpen() {
+        return opened;
+    }
+
+    public void open(World world) {
+        world.set(doorPos, unlockedDoorTile);
+        opened = true;
     }
 
     public Position getDoorPos() {
         return doorPos;
-    }
-
-    public TETile getLockedDoorTile() {
-        return lockedDoorTile;
-    }
-
-    public TETile getUnlockedDoorTile() {
-        return unlockedDoorTile;
     }
 }

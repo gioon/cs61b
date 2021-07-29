@@ -1,6 +1,9 @@
 package byog.Core.Unit;
 
+import byog.Core.Feature.LightSource;
+import byog.Core.Feature.Shade;
 import byog.Core.Map.Position;
+import byog.Core.Map.World;
 import byog.TileEngine.TETile;
 
 import java.io.Serializable;
@@ -9,25 +12,32 @@ public class Player implements Serializable {
     private Position playerPos;
     private int stepNum, power, speed, health, shieldThresh, powerAward, speedUp;
     private TETile backTile, playerTile, wallTile, nailTile;
-    private boolean shield;
+    private boolean shield, hardMode;
 
     private Door door;
+    private LightSource lightSource; // hard mode
     private Guard guard;
     private Flower flower;
     private Portal portal;
+    private Shade shade; // hard mode
+
+    private boolean checkClear; // hard mode
 
     public Player(Position playerPos, TETile backTile,
-                  TETile playerTile, TETile wallTile, TETile nailTile) {
+                  TETile playerTile, TETile wallTile, TETile nailTile, boolean hardMode) {
         this.playerPos = playerPos;
         this.backTile = backTile;
         this.playerTile = playerTile;
         this.wallTile = wallTile;
         this.nailTile = nailTile;
+        this.hardMode = hardMode;
 
-        this.shield = false;
         this.stepNum = 0;
+        this.shield = false;
         this.power = 0;
         this.speed = 1;
+
+        this.checkClear = true; // hard mode
     }
 
     public void setAttribute(int h, int st, int pa, int su) {
@@ -37,11 +47,13 @@ public class Player implements Serializable {
         this.speedUp = su;
     }
 
-    public void setUnit(Door d, Guard g, Flower f, Portal pt) {
+    public void setUnit(Door d, LightSource l, Guard g, Flower f, Portal pt, Shade s) {
         this.door = d;
+        this.lightSource = l; // hard mode
         this.guard = g;
         this.flower = f;
         this.portal = pt;
+        this.shade = s; // hard mode
     }
 
     public void setBackTile(TETile backTile) {
@@ -52,16 +64,12 @@ public class Player implements Serializable {
         return playerPos;
     }
 
-    public int getHealth() {
-        return health;
-    }
-
-    public TETile getPlayerTile() {
-        return playerTile;
-    }
-
     public TETile getBackTile() {
         return backTile;
+    }
+
+    public int getHealth() {
+        return health;
     }
 
     public int getStepNum() {
@@ -113,7 +121,7 @@ public class Player implements Serializable {
         return 0;
     }
 
-    public int move(TETile[][] world, char c) {
+    public int move(World world, char c) {
         for (int i = 0; i < speed; i++) {
             int nextX = playerPos.getX();
             int nextY = playerPos.getY();
@@ -134,15 +142,12 @@ public class Player implements Serializable {
                     return 0;
             }
 
-            if (world[nextX][nextY].equals(door.getLockedDoorTile())
-                    || world[nextX][nextY].equals(wallTile)) {
+            Position p = new Position(nextX, nextY);
+            if (world.get(p).equals(wallTile)) {
                 changePower();
                 return 0;
             }
-            if (world[nextX][nextY].equals(door.getUnlockedDoorTile())) {
-                return 1;
-            }
-            if (world[nextX][nextY].equals(nailTile)) {
+            if (world.get(p).equals(nailTile)) {
                 changePower();
                 if (!shield) {
                     return injure();
@@ -150,38 +155,83 @@ public class Player implements Serializable {
                 shield = false;
                 return 0;
             }
+            if (p.equals(door.getDoorPos())) {
+                if (door.isOpen()) {
+                    return 1;
+                }
+                changePower();
+                return 0;
+            }
 
-            world[playerPos.getX()][playerPos.getY()] = backTile;
-            Position p = new Position(nextX, nextY);
-            if (world[nextX][nextY].equals(guard.getGuardTile())) {
+            world.set(playerPos, backTile);
+            int gi = guard.getIndex(p);
+            int fi = flower.getIndex(p);
+//            if (gi >= 0) {
+//                if (!shield) {
+//                    return injure();
+//                }
+//                shield = false;
+//                stepNum--;
+//                backTile = guard.getOneBackTile(gi);
+//                guard.delGuard(gi);
+//            } else if (fi >= 0) {
+//                power += powerAward;
+//                backTile = flower.getOneBackTile(fi);
+//                flower.delFlower(fi);
+//            } else if (p.equals(portal.getPortal1()) && portal.getPortal2() != null) {
+//                nextX = portal.getPortal2().getX();
+//                nextY = portal.getPortal2().getY();
+//                backTile = world[nextX][nextY];
+//            } else if (p.equals(portal.getPortal2())) {
+//                nextX = portal.getPortal1().getX();
+//                nextY = portal.getPortal1().getY();
+//                backTile = world[nextX][nextY];
+//            } else {
+//                backTile = world[nextX][nextY];
+//            }
+
+            if (gi >= 0) {
                 if (!shield) {
                     return injure();
                 }
                 shield = false;
                 stepNum--;
-                backTile = guard.getOneBackTile(p);
-                guard.delGuard(p);
-            } else if (world[nextX][nextY].equals(flower.getFlowerTile())) {
+                world.set(p, guard.getOneBackTile(gi));
+                guard.delGuard(gi);
+            } else if (fi >= 0) {
                 power += powerAward;
-                backTile = flower.getOneBackTile(p);
-                flower.delFlower(p);
+                world.set(p, flower.getOneBackTile(fi));
+                flower.delFlower(fi);
             } else if (p.equals(portal.getPortal1()) && portal.getPortal2() != null) {
-                nextX = portal.getPortal2().getX();
-                nextY = portal.getPortal2().getY();
-                backTile = world[nextX][nextY];
+                p = portal.getPortal2();
             } else if (p.equals(portal.getPortal2())) {
-                nextX = portal.getPortal1().getX();
-                nextY = portal.getPortal1().getY();
-                backTile = world[nextX][nextY];
-            } else {
-                backTile = world[nextX][nextY];
+                p = portal.getPortal1();
             }
 
-            if (guard.isClear()) {
-                door.change(world);
+            backTile = world.get(p);
+            world.set(p, playerTile);
+            playerPos = p;
+            // the above statements shouldn't be put after hard mode
+            // player - changeTile - "playerPos = p;"
+            // otherwise the light would be wrong
+            // lightSource would call lightSource - changeTile - world.set(p, t);
+            // instead of changeTile - player.setBackTile
+
+            if (hardMode) {
+                // hard mode
+                if (checkClear && guard.isClear()) {
+                    checkClear = false;
+                    door.open(world);
+                    shade.change();
+                    lightSource.turnOffAll(world);
+                }
+            } else {
+                // easy mode
+                if (guard.isClear()) {
+                    door.open(world);
+                }
             }
-            world[nextX][nextY] = playerTile;
-            playerPos = new Position(nextX, nextY);
+
             if (!shield) {
                 stepNum++;
             }

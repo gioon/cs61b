@@ -7,59 +7,42 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Flower implements Serializable {
-    private TETile backTile, flowerTile;
+    private TETile backTile;
 
     private ArrayList<Position> flowers;
     private ArrayList<TETile> backTiles;
 
-    public Flower(TETile backTile, TETile flowerTile) {
+    public Flower(TETile backTile) {
         this.backTile = backTile;
-        this.flowerTile = flowerTile;
 
         flowers = new ArrayList<>();
         backTiles = new ArrayList<>();
     }
 
-    private int getIndex(Position flower) {
-        int i = 0;
-        while (i < flowers.size()) {
-            if (flowers.get(i).equals(flower)) {
-                break;
+    public int getIndex(Position p) {
+        for (int i = 0; i < flowers.size(); i++) {
+            if (flowers.get(i).equals(p)) {
+                return i;
             }
-            i++;
         }
-        return i;
+        return -1;
     }
 
-    public void addFlower(Position flower) {
-        flowers.add(flower);
+    public void addFlower(Position p) {
+        flowers.add(p);
         backTiles.add(backTile);
     }
 
-    public void delFlower(Position flower) {
-        int i = getIndex(flower);
-        if (i < flowers.size()) {
-            flowers.remove(i);
-            backTiles.remove(i);
-        }
+    public void delFlower(int i) {
+        flowers.remove(i);
+        backTiles.remove(i);
     }
 
-    public void setOneBackTile(Position flower, TETile tile) {
-        int i = getIndex(flower);
-        if (i < flowers.size()) {
-            backTiles.set(i, tile);
-        }
+    public void setOneBackTile(int i, TETile t) {
+        backTiles.set(i, t);
     }
 
-    public TETile getOneBackTile(Position flower) {
-        int i = getIndex(flower);
-        if (i < flowers.size()) {
-            return backTiles.get(i);
-        }
-        return backTile;
-    }
-
-    public TETile getFlowerTile() {
-        return flowerTile;
+    public TETile getOneBackTile(int i) {
+        return backTiles.get(i);
     }
 }

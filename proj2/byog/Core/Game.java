@@ -2,6 +2,7 @@ package byog.Core;
 
 import byog.Core.Feature.LightSource;
 import byog.Core.Feature.Shade;
+import byog.Core.Map.World;
 import byog.Core.Unit.Door;
 import byog.Core.Unit.Flower;
 import byog.Core.Unit.Guard;
@@ -11,8 +12,6 @@ import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
 import edu.princeton.cs.introcs.StdDraw;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -24,27 +23,20 @@ import java.util.Random;
 public class Game {
     private final TERenderer ter = new TERenderer();
 
-    private static final int C_WIDTH = Parameters.C_WIDTH;
-    private static final int C_HEIGHT = Parameters.C_HEIGHT;
-    private static final int FONT_SIZE = Parameters.FONT_SIZE;
-
     private static final int MAX_WIDTH = Parameters.MAX_WIDTH;
     private static final int MAX_HEIGHT = Parameters.MAX_HEIGHT;
     private static final int INC_WIDTH = Parameters.INC_WIDTH;
     private static final int INC_HEIGHT = Parameters.INC_HEIGHT;
     private static final int ROUND = Parameters.ROUND;
 
-    private static final int LEFT_OFF = (C_WIDTH - MAX_WIDTH) / 2; // left offset - xOffset
-    private static final int DOWN_OFF = (C_HEIGHT - MAX_HEIGHT) / 2; // down offset - yOffset
-    // canvas的width和height包含offset和map的Width和height否则界面显示不全
-
     private int width;
     private int height;
     private int gameState;
 
+    private boolean hardMode;
     private int round;
     private Random random;
-    private TETile[][] world;
+    private World world;
     private Door door;
     private Player player;
     private LightSource lightSource;
@@ -60,38 +52,10 @@ public class Game {
         }
     }
 
-    private void drawRandomSeed(String s) {
-        StdDraw.clear(Color.BLACK);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-        StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75,
-                "Please enter a random seed (S to stop)");
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s + "_");
-        StdDraw.show();
-    }
-
-    private Long enterRandomSeed() {
-        String seedStr = "";
-        drawRandomSeed(seedStr);
-        while (true) {
-            if (StdDraw.hasNextKeyTyped()) {
-                char c = StdDraw.nextKeyTyped();
-                if (c == 's' && !seedStr.equals("")) {
-                    break;
-                }
-                if (Character.isDigit(c)) {
-                    seedStr += c;
-                }
-                drawRandomSeed(seedStr);
-            }
-        }
-        return Long.parseLong(seedStr);
-    }
-
     private void newGame() {
         setWidthAndHeight();
 
-        MapGenerator mg = new MapGenerator(width, height, random);
+        MapGenerator mg = new MapGenerator(width, height, random, hardMode);
         mg.generate();
         world = mg.getWorld();
         door = mg.getDoor();
@@ -101,37 +65,17 @@ public class Game {
         flower = mg.getFlower();
         portal = mg.getPortal();
         shade = mg.getShade();
-    }
 
-    private void loadGame() {
-        Saving saving = null;
-
-        try {
-            FileInputStream fileIn = new FileInputStream("data.txt");
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            saving = (Saving) in.readObject();
-            in.close();
-            fileIn.close();
-        } catch (IOException | ClassNotFoundException e) {
-            System.exit(0); // 没有存档会直接退出
+        // hard mode
+        if (hardMode) {
+            shade.change();
+            lightSource.turnOnAll(world);
         }
-
-        round = saving.getRound();
-        setWidthAndHeight();
-
-        random = saving.getRandom();
-        world = saving.getWorld();
-        door = saving.getDoor();
-        player = saving.getPlayer();
-        lightSource = saving.getLightSource();
-        guard = saving.getGuard();
-        flower = saving.getFlower();
-        portal = saving.getPortal();
-        shade = saving.getShade();
     }
 
     private void saveGame() {
         Saving saving = new Saving();
+        saving.setHardMode(hardMode);
         saving.setRound(round);
         saving.setRandom(random);
         saving.setWorld(world);
@@ -154,6 +98,34 @@ public class Game {
         }
     }
 
+    private void loadGame() {
+        Saving saving = null;
+
+        try {
+            FileInputStream fileIn = new FileInputStream("data.txt");
+            ObjectInputStream in = new ObjectInputStream(fileIn);
+            saving = (Saving) in.readObject();
+            in.close();
+            fileIn.close();
+        } catch (IOException | ClassNotFoundException e) {
+            System.exit(0); // 没有存档会直接退出
+        }
+
+        hardMode = saving.getHardMode();
+        round = saving.getRound();
+        setWidthAndHeight();
+
+        random = saving.getRandom();
+        world = saving.getWorld();
+        door = saving.getDoor();
+        player = saving.getPlayer();
+        lightSource = saving.getLightSource();
+        guard = saving.getGuard();
+        flower = saving.getFlower();
+        portal = saving.getPortal();
+        shade = saving.getShade();
+    }
+
     private void playGame(char c) {
         switch (c) {
             case 'w':
@@ -163,11 +135,16 @@ public class Game {
                 gameState = player.move(world, c);
                 // 0: nothing 1: win / new game 2: lose
                 return;
+            // easy mode
             case '1':
-                shade.change();
+                if (!hardMode) {
+                    shade.change();
+                }
                 return;
             case '2':
-                lightSource.change(world);
+                if (!hardMode) {
+                    lightSource.changeWorld(world);
+                }
                 return;
             case 'f':
                 player.changeSpeed();
@@ -179,61 +156,28 @@ public class Game {
         }
     }
 
-    private void drawText(String s) {
-        StdDraw.clear(Color.BLACK);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-        StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s);
-        StdDraw.show();
-        StdDraw.pause(500);
-    }
 
-    private void drawGame() {
-        drawText("ROUND " + round);
-        ter.renderFrame(world);
-        drawHUD();
-    }
 
-    private void drawHUD() {
-        StdDraw.setPenColor(Color.WHITE);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
-        StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.2, C_HEIGHT * 0.92,
-                "❤ - " + player.getHealth()
-                + "     ⛸ - " + player.getStepNum()
-                + " - " + player.getShield()
-                + "     ✿ - " + player.getPower()
-                + " - " + player.getSpeed());
-
-        double mx = StdDraw.mouseX();
-        double my = StdDraw.mouseY();
-        if (mx > LEFT_OFF && mx < LEFT_OFF + width
-                && my > DOWN_OFF && my < DOWN_OFF + height) {
-            int wx = (int) (mx - LEFT_OFF);
-            int wy = (int) (my - DOWN_OFF);
-            StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.92,
-                    "You see " + world[wx][wy].description() + ".");
+    private Long enterRandomSeed() {
+        String seedStr = "";
+        Drawer.drawRandomSeed(seedStr);
+        while (true) {
+            if (StdDraw.hasNextKeyTyped()) {
+                char c = StdDraw.nextKeyTyped();
+                if (c == 's' && !seedStr.equals("")) {
+                    break;
+                }
+                if (Character.isDigit(c)) {
+                    seedStr += c;
+                }
+                Drawer.drawRandomSeed(seedStr);
+            }
         }
-
-        StdDraw.show();
-    }
-
-    private void drawMenu() {
-        StdDraw.clear(Color.BLACK);
-        StdDraw.setPenColor(Color.WHITE);
-        Font font = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
-        StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75, "CS61B: THE GAME");
-        font = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-        StdDraw.setFont(font);
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.52, "New Game (N)");
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.46, "Load Game (L)");
-        StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.40, "Quit (Q)");
-        StdDraw.show();
+        return Long.parseLong(seedStr);
     }
 
     private void playWithKeyboardMenu() {
-        drawMenu();
+        Drawer.drawMenu();
 
         char c;
         while (true) {
@@ -242,7 +186,7 @@ public class Game {
                 if (c == 'q') {
                     System.exit(0);
                 }
-                if (c == 'l' || c == 'n') {
+                if (c == 'l' || c == 'n' || c == 'h') {
                     break;
                 }
             }
@@ -250,20 +194,22 @@ public class Game {
         if (c == 'l') {
             loadGame();
         }
-        if (c == 'n') {
+        if (c == 'n' || c == 'h') {
+            hardMode = true;
+//            hardMode = (c != 'n');
             round = 1;
             random = new Random(enterRandomSeed());
             newGame();
         }
 
-        drawGame();
+        Drawer.drawEyecatch("ROUND " + round);
     }
 
     /**
      * Method used for playing a fresh game. The game should start from the main menu.
      */
     public void playWithKeyboard() {
-        ter.initialize(C_WIDTH, C_HEIGHT, LEFT_OFF, DOWN_OFF);
+        Drawer.initialize(ter);
         playWithKeyboardMenu();
 
         char c;
@@ -297,31 +243,31 @@ public class Game {
                 if (gameState == 1) {
                     gameState = 0;
                     if (round == ROUND) {
-                        drawText("YOU WIN!");
+                        Drawer.drawEyecatch("YOU WIN!");
                         round = 1;
                         newGame();
-                        drawGame();
+                        Drawer.drawEyecatch("ROUND " + round);
                     } else {
                         round++;
                         newGame();
-                        drawGame();
+                        Drawer.drawEyecatch("ROUND " + round);
                     }
                 }
                 if (gameState == 2) {
                     gameState = 0;
-                    drawText("GAME OVER!");
+                    Drawer.drawEyecatch("GAME OVER!");
                     newGame();
-                    drawGame();
+                    Drawer.drawEyecatch("ROUND " + round);
                 }
             }
 
             StdDraw.pause(10);
             if (shade.isOpen()) {
-                ter.renderFrame(shade.getShade(world, player));
+                Drawer.drawShadeWorld(ter, world, shade);
             } else {
-                ter.renderFrame(world);
+                Drawer.drawWorld(ter, world);
             }
-            drawHUD();
+            Drawer.drawHUD(world, player);
         }
     }
 
@@ -334,6 +280,9 @@ public class Game {
                 loadGame();
                 break;
             case 'n':
+            case 'h':
+                hardMode = true;
+//                hardMode = (chars[i] != 'n');
                 String seedStr = "";
                 i++;
                 while (i < chars.length) {
@@ -417,8 +366,8 @@ public class Game {
         }
 
         if (shade.isOpen()) {
-            return shade.getShade(world, player);
+            return shade.getShadeWorld(world).getState();
         }
-        return world;
+        return world.getState();
     }
 }

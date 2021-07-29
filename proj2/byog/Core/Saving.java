@@ -2,20 +2,21 @@ package byog.Core;
 
 import byog.Core.Feature.LightSource;
 import byog.Core.Feature.Shade;
+import byog.Core.Map.World;
 import byog.Core.Unit.Door;
 import byog.Core.Unit.Flower;
 import byog.Core.Unit.Guard;
 import byog.Core.Unit.Player;
 import byog.Core.Unit.Portal;
-import byog.TileEngine.TETile;
 
 import java.io.Serializable;
 import java.util.Random;
 
 public class Saving implements Serializable {
+    private boolean hardMode;
     private int round;
     private Random random;
-    private TETile[][] world;
+    private World world;
     private Door door;
     private Player player;
     private LightSource lightSource;
@@ -23,6 +24,10 @@ public class Saving implements Serializable {
     private Flower flower;
     private Portal portal;
     private Shade shade;
+
+    public void setHardMode(boolean hardMode) {
+        this.hardMode = hardMode;
+    }
 
     public void setRound(int round) {
         this.round = round;
@@ -32,7 +37,7 @@ public class Saving implements Serializable {
         this.random = random;
     }
 
-    public void setWorld(TETile[][] world) {
+    public void setWorld(World world) {
         this.world = world;
     }
 
@@ -64,6 +69,10 @@ public class Saving implements Serializable {
         this.shade = shade;
     }
 
+    public boolean getHardMode() {
+        return hardMode;
+    }
+
     public int getRound() {
         return round;
     }
@@ -72,7 +81,7 @@ public class Saving implements Serializable {
         return random;
     }
 
-    public TETile[][] getWorld() {
+    public World getWorld() {
         return world;
     }
 
