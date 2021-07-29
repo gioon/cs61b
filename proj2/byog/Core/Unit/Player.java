@@ -166,30 +166,6 @@ public class Player implements Serializable {
             world.set(playerPos, backTile);
             int gi = guard.getIndex(p);
             int fi = flower.getIndex(p);
-//            if (gi >= 0) {
-//                if (!shield) {
-//                    return injure();
-//                }
-//                shield = false;
-//                stepNum--;
-//                backTile = guard.getOneBackTile(gi);
-//                guard.delGuard(gi);
-//            } else if (fi >= 0) {
-//                power += powerAward;
-//                backTile = flower.getOneBackTile(fi);
-//                flower.delFlower(fi);
-//            } else if (p.equals(portal.getPortal1()) && portal.getPortal2() != null) {
-//                nextX = portal.getPortal2().getX();
-//                nextY = portal.getPortal2().getY();
-//                backTile = world[nextX][nextY];
-//            } else if (p.equals(portal.getPortal2())) {
-//                nextX = portal.getPortal1().getX();
-//                nextY = portal.getPortal1().getY();
-//                backTile = world[nextX][nextY];
-//            } else {
-//                backTile = world[nextX][nextY];
-//            }
-
             if (gi >= 0) {
                 if (!shield) {
                     return injure();
@@ -211,36 +187,38 @@ public class Player implements Serializable {
             backTile = world.get(p);
             world.set(p, playerTile);
             playerPos = p;
-            // the above statements shouldn't be put after hard mode
-            // player - changeTile - "playerPos = p;"
-            // otherwise the light would be wrong
+            // the above statements shouldn't be put after moveHelper - hard mode
+            // player - changeTile - "playerPos = p;", otherwise the light would be wrong
             // lightSource would call lightSource - changeTile - world.set(p, t);
             // instead of changeTile - player.setBackTile
-
-            if (hardMode) {
-                // hard mode
-                if (checkClear && guard.isClear()) {
-                    checkClear = false;
-                    door.open(world);
-                    shade.change();
-                    lightSource.turnOffAll(world);
-                }
-            } else {
-                // easy mode
-                if (guard.isClear()) {
-                    door.open(world);
-                }
-            }
-
-            if (!shield) {
-                stepNum++;
-            }
-            if (stepNum == shieldThresh) {
-                shield = true;
-                stepNum = 0;
-            }
+            moveHelper(world);
         }
         changePower();
         return 0;
+    }
+
+    private void moveHelper(World world) {
+        if (hardMode) {
+            // hard mode
+            if (checkClear && guard.isClear()) {
+                checkClear = false;
+                door.open(world);
+                shade.change();
+                lightSource.turnOffAll(world);
+            }
+        } else {
+            // easy mode
+            if (guard.isClear()) {
+                door.open(world);
+            }
+        }
+
+        if (!shield) {
+            stepNum++;
+        }
+        if (stepNum == shieldThresh) {
+            shield = true;
+            stepNum = 0;
+        }
     }
 }

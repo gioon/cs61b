@@ -21,9 +21,9 @@ public class Drawer {
     private static final int DOWN_OFF = (C_HEIGHT - MAX_HEIGHT) / 2; // down offset - yOffset
     // canvas的width和height包含offset和map的Width和height否则界面显示不全
 
-    private static final Font font2 = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
-    private static final Font font3 = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
-    private static final Font font6 = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
+    private static final Font FONT2 = new Font("Monaco", Font.BOLD, FONT_SIZE * 2);
+    private static final Font FONT3 = new Font("Monaco", Font.BOLD, FONT_SIZE * 3);
+    private static final Font FONT6 = new Font("Monaco", Font.BOLD, FONT_SIZE + 6);
 
     public static void initialize(TERenderer ter) {
         ter.initialize(C_WIDTH, C_HEIGHT, LEFT_OFF, DOWN_OFF);
@@ -32,9 +32,9 @@ public class Drawer {
     public static void drawMenu() {
         StdDraw.clear(Color.BLACK);
         StdDraw.setPenColor(Color.WHITE);
-        StdDraw.setFont(font3);
+        StdDraw.setFont(FONT3);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75, "CS61B: THE GAME");
-        StdDraw.setFont(font2);
+        StdDraw.setFont(FONT2);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.52, "New Game (N)");
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.46, "Hard Game (H)");
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.40, "Load Game (L)");
@@ -44,7 +44,7 @@ public class Drawer {
 
     public static void drawRandomSeed(String s) {
         StdDraw.clear(Color.BLACK);
-        StdDraw.setFont(font2);
+        StdDraw.setFont(FONT2);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.75,
                 "Please enter a random seed (S to stop)");
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s + "_");
@@ -53,7 +53,7 @@ public class Drawer {
 
     public static void drawEyecatch(String s) {
         StdDraw.clear(Color.BLACK);
-        StdDraw.setFont(font2);
+        StdDraw.setFont(FONT2);
         StdDraw.text(C_WIDTH * 0.5, C_HEIGHT * 0.5, s);
         StdDraw.show();
         StdDraw.pause(500);
@@ -69,7 +69,7 @@ public class Drawer {
 
     public static void drawHUD(World world, Player player) {
         StdDraw.setPenColor(Color.WHITE);
-        StdDraw.setFont(font6);
+        StdDraw.setFont(FONT6);
         StdDraw.text(C_WIDTH * 0.2, C_HEIGHT * 0.92,
                 "❤ - " + player.getHealth()
                         + "     ⛸ - " + player.getStepNum()
