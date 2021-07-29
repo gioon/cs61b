@@ -163,7 +163,6 @@ public class Player implements Serializable {
                 return 0;
             }
 
-            world.set(playerPos, backTile);
             int gi = guard.getIndex(p);
             int fi = flower.getIndex(p);
             if (gi >= 0) {
@@ -184,6 +183,8 @@ public class Player implements Serializable {
                 p = portal.getPortal1();
             }
 
+            // now we can move forward / transport
+            world.set(playerPos, backTile);
             backTile = world.get(p);
             world.set(p, playerTile);
             playerPos = p;

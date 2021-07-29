@@ -126,9 +126,9 @@ public class MapGenerator {
                         Math.min(base.getY() + random.nextInt(rectHeight),
                                 base.getY() + random.nextInt(height - 1 - base.getY())));
                 hall = new Hallway(base, end, 0);
-                if (notOverlap(hall, room)) {
+//                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                }
+//                }
             }
 
             // down
@@ -140,9 +140,9 @@ public class MapGenerator {
                         Math.max(base.getY() - random.nextInt(rectHeight),
                                 base.getY() - random.nextInt(base.getY())));
                 hall = new Hallway(base, end, 1);
-                if (notOverlap(hall, room)) {
+//                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                }
+//                }
             }
 
             // left
@@ -152,9 +152,9 @@ public class MapGenerator {
                 end = new Position(Math.max(base.getX() - random.nextInt(rectWidth),
                         base.getX() - random.nextInt(base.getX())), base.getY());
                 hall = new Hallway(base, end, 2);
-                if (notOverlap(hall, room)) {
+//                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                }
+//                }
             }
 
             // right
@@ -164,9 +164,9 @@ public class MapGenerator {
                 end = new Position(Math.min(base.getX() + random.nextInt(rectWidth),
                         base.getX() + random.nextInt(width - 1 - base.getX())), base.getY());
                 hall = new Hallway(base, end, 3);
-                if (notOverlap(hall, room)) {
+//                if (notOverlap(hall, room)) {
                     halls.add(hall);
-                }
+//                }
             }
 
             rects.addAll(halls);

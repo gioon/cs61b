@@ -195,8 +195,8 @@ public class Game {
             loadGame();
         }
         if (c == 'n' || c == 'h') {
-            hardMode = false;
-//            hardMode = (c != 'n');
+//            hardMode = true;
+            hardMode = (c != 'n');
             round = 1;
             random = new Random(enterRandomSeed());
             newGame();
@@ -281,8 +281,8 @@ public class Game {
                 break;
             case 'n':
             case 'h':
-                hardMode = false;
-//                hardMode = (chars[i] != 'n');
+//                hardMode = true;
+                hardMode = (chars[i] != 'n');
                 String seedStr = "";
                 i++;
                 while (i < chars.length) {
